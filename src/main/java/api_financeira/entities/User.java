@@ -1,5 +1,6 @@
 package api_financeira.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
@@ -17,6 +18,7 @@ public class User implements Serializable {
     @Column(unique = true)
     private String email;
 
+    @JsonIgnore
     private String password;
 
     public User() {}
