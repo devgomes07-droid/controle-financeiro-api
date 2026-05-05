@@ -1,0 +1,16 @@
+spring.application.name=api-financeira
+spring.profiles.active=prod
+spring.jpa.open-in-view=false
+
+jwt.secret=YOUR_JWT_SECRET_HERE
+jwt.expiration=86400000
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/financeiro
+spring.datasource.username=postgres
+spring.datasource.password=YOUR_PASSWORD_HERE
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
