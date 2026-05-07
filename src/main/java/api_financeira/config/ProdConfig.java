@@ -34,7 +34,11 @@ public class ProdConfig implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        if (userRepository.count() > 0) return;
+        try {
+            if (userRepository.count() > 0) return;
+        } catch (Exception e) {
+            return;
+        }
 
         // USERS
         User u1 = new User(null, "Gabriel Silva", "gabriel@gmail.com", passwordEncoder.encode("123456"));
