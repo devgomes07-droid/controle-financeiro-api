@@ -2,10 +2,10 @@ package api_financeira.dto;
 
 public record TransactionRequestDTO(
 
-        String title,
+        String description,
         Double amount,
-        String category,
-        String type
+        String type,
+        Long categoryId
 
 ) {
 }

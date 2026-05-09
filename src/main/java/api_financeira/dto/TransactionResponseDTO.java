@@ -3,10 +3,10 @@ package api_financeira.dto;
 public record TransactionResponseDTO(
 
         Long id,
-        String title,
+        String description,
         Double amount,
-        String category,
-        String type
+        String type,
+        String category
 
 ) {
 }
