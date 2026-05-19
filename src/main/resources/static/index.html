@@ -3,430 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Financeiro</title>
+    <title>Finance Dashboard</title>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
-
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-        }
-
-        body{
-            font-family:Arial, sans-serif;
-            background:#121212;
-            color:white;
-            padding:20px;
-        }
-
-        .container{
-            max-width:1200px;
-            margin:auto;
-        }
-
-        .card{
-            background:#1e1e1e;
-            padding:20px;
-            border-radius:12px;
-            margin-bottom:20px;
-            box-shadow:0 0 10px rgba(0,0,0,0.4);
-        }
-
-        h1,h2{
-            margin-bottom:15px;
-        }
-
-        input{
-            width:100%;
-            padding:12px;
-            margin-bottom:10px;
-            border:none;
-            border-radius:8px;
-            outline:none;
-        }
-
-        button{
-            width:100%;
-            padding:12px;
-            border:none;
-            border-radius:8px;
-            background:#00b894;
-            color:white;
-            font-weight:bold;
-            cursor:pointer;
-            transition:0.3s;
-        }
-
-        button:hover{
-            opacity:0.8;
-        }
-
-        .metrics{
-            display:flex;
-            gap:20px;
-            flex-wrap:wrap;
-        }
-
-        .metric-box{
-            flex:1;
-            min-width:200px;
-            background:#2d3436;
-            padding:20px;
-            border-radius:10px;
-        }
-
-        canvas{
-            background:white;
-            border-radius:10px;
-            padding:10px;
-            width:100% !important;
-            max-height:400px;
-        }
-
-        table{
-            width:100%;
-            border-collapse:collapse;
-        }
-
-        th,td{
-            padding:12px;
-            border-bottom:1px solid #333;
-            text-align:left;
-        }
-
-        th{
-            background:#2d3436;
-        }
-
-        .receita{
-            color:#00ff99;
-            font-weight:bold;
-        }
-
-        .despesa{
-            color:#ff7675;
-            font-weight:bold;
-        }
-
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="container">
+<div class="app">
 
-    <div class="card">
+    <!-- LOGIN -->
+    <div class="login-card" id="loginBox">
 
-        <h1>Controle Financeiro</h1>
+        <h1>💰 Finance AI</h1>
+        <p>Entre na sua conta</p>
 
-        <input
-                type="email"
-                id="email"
-                placeholder="Digite seu email"
-        >
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Senha">
 
-        <input
-                type="password"
-                id="password"
-                placeholder="Digite sua senha"
-        >
-
-        <button onclick="login()">
-            Entrar
-        </button>
+        <button onclick="login()">Entrar</button>
 
     </div>
 
-    <div id="dashboard" style="display:none;">
+    <!-- DASHBOARD -->
+    <div class="dashboard" id="dashboard" style="display:none;">
 
-        <div class="card">
+        <div class="top">
 
-            <h2>Métricas</h2>
+            <div class="card">
+                <h3>Receitas</h3>
+                <p id="receitas">R$ 0</p>
+            </div>
 
-            <div class="metrics">
-
-                <div class="metric-box">
-                    <h3>Total Receitas</h3>
-                    <p id="receitas">R$ 0</p>
-                </div>
-
-                <div class="metric-box">
-                    <h3>Total Despesas</h3>
-                    <p id="despesas">R$ 0</p>
-                </div>
-
+            <div class="card">
+                <h3>Despesas</h3>
+                <p id="despesas">R$ 0</p>
             </div>
 
         </div>
 
-        <div class="card">
+        <div class="charts">
 
-            <h2>Gráfico de Barras</h2>
+            <div class="card">
+                <h3>Fluxo Financeiro</h3>
+                <canvas id="barChart"></canvas>
+            </div>
 
-            <canvas id="barChart"></canvas>
-
-        </div>
-
-        <div class="card">
-
-            <h2>Gráfico de Pizza</h2>
-
-            <canvas id="pieChart"></canvas>
+            <div class="card">
+                <h3>Categorias</h3>
+                <canvas id="pieChart"></canvas>
+            </div>
 
         </div>
 
-        <div class="card">
-
-            <h2>Transações</h2>
-
+        <div class="card table">
+            <h3>Transações</h3>
             <table>
-
                 <thead>
-
                 <tr>
                     <th>Descrição</th>
                     <th>Valor</th>
                     <th>Tipo</th>
                     <th>Categoria</th>
                 </tr>
-
                 </thead>
-
                 <tbody id="transactionsBody"></tbody>
-
             </table>
-
         </div>
 
     </div>
 
 </div>
 
-<script>
-
-    const API_URL = "http://localhost:8080";
-
-    let token = "";
-
-    let barChart = null;
-    let pieChart = null;
-
-    async function login(){
-
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        try{
-
-            const response = await fetch(`${API_URL}/auth/login`,{
-
-                method:"POST",
-
-                headers:{
-                    "Content-Type":"application/json"
-                },
-
-                body:JSON.stringify({
-                    email,
-                    password
-                })
-
-            });
-
-            if(!response.ok){
-                throw new Error("Login inválido");
-            }
-
-            const data = await response.json();
-
-            token = data.token;
-
-            alert("Login realizado com sucesso!");
-
-            document.getElementById("dashboard").style.display = "block";
-
-            carregarDados();
-
-        }catch(error){
-
-            console.error(error);
-
-            alert("Erro no login");
-
-        }
-
-    }
-
-    async function carregarDados(){
-
-        try{
-
-            const response = await fetch(`${API_URL}/transactions`,{
-
-                headers:{
-                    "Authorization":`Bearer ${token}`
-                }
-
-            });
-
-            if(!response.ok){
-                throw new Error("Erro ao buscar transações");
-            }
-
-            const transactions = await response.json();
-
-            console.log(transactions);
-
-            let receitas = 0;
-            let despesas = 0;
-
-            const categorias = {};
-
-            const tbody = document.getElementById("transactionsBody");
-
-            tbody.innerHTML = "";
-
-            transactions.forEach(t => {
-
-                const tipo =
-                    t.type === "RECEITA" || t.type === "INCOME"
-                        ? "Receita"
-                        : "Despesa";
-
-                const classe =
-                    tipo === "Receita"
-                        ? "receita"
-                        : "despesa";
-
-                tbody.innerHTML += `
-
-                    <tr>
-
-                        <td>${t.description}</td>
-
-                        <td class="${classe}">
-                            R$ ${t.amount}
-                        </td>
-
-                        <td>${tipo}</td>
-
-                        <td>${t.category}</td>
-
-                    </tr>
-
-                `;
-
-                if(
-                    t.type === "RECEITA" ||
-                    t.type === "INCOME"
-                ){
-                    receitas += t.amount;
-                }
-
-                if(
-                    t.type === "DESPESA" ||
-                    t.type === "EXPENSE"
-                ){
-                    despesas += t.amount;
-                }
-
-                const categoria = t.category || "Outros";
-
-                categorias[categoria] =
-                    (categorias[categoria] || 0) + 1;
-
-            });
-
-            document.getElementById("receitas").innerText =
-                receitas.toFixed(2);
-
-            document.getElementById("despesas").innerText =
-                despesas.toFixed(2);
-
-            criarGrafico(receitas, despesas);
-
-            criarPizza(categorias);
-
-        }catch(error){
-
-            console.error(error);
-
-            alert("Erro ao carregar dados");
-
-        }
-
-    }
-
-    function criarGrafico(receitas, despesas){
-
-        if(barChart){
-            barChart.destroy();
-        }
-
-        barChart = new Chart(
-
-            document.getElementById("barChart"),
-
-            {
-
-                type:"bar",
-
-                data:{
-
-                    labels:["Receitas","Despesas"],
-
-                    datasets:[{
-
-                        label:"Valores",
-
-                        data:[receitas, despesas]
-
-                    }]
-
-                }
-
-            }
-
-        );
-
-    }
-
-    function criarPizza(categorias){
-
-        if(pieChart){
-            pieChart.destroy();
-        }
-
-        pieChart = new Chart(
-
-            document.getElementById("pieChart"),
-
-            {
-
-                type:"pie",
-
-                data:{
-
-                    labels:Object.keys(categorias),
-
-                    datasets:[{
-
-                        data:Object.values(categorias)
-
-                    }]
-
-                }
-
-            }
-
-        );
-
-    }
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
