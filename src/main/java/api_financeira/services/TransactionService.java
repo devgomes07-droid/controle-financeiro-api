@@ -43,13 +43,14 @@ public class TransactionService {
     public TransactionResponseDTO insert(TransactionRequestDTO dto) {
 
         Transaction entity = new Transaction();
-        entity.setDescription(dto.description());
-        entity.setAmount(dto.amount());
-        entity.setType(dto.type());
+
+        entity.setDescription(dto.getDescription());
+        entity.setAmount(dto.getAmount());
+        entity.setType(dto.getType());
         entity.setDate(Instant.now());
 
-        Category category = categoryRepository.findById(dto.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException(dto.categoryId()));
+        Category category = categoryRepository.findById(dto.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException(dto.getCategoryId()));
 
         entity.setCategory(category);
 
@@ -63,12 +64,12 @@ public class TransactionService {
         try {
             Transaction entity = repository.getReferenceById(id);
 
-            entity.setDescription(dto.description());
-            entity.setAmount(dto.amount());
-            entity.setType(dto.type());
+            entity.setDescription(dto.getDescription());
+            entity.setAmount(dto.getAmount());
+            entity.setType(dto.getType());
 
-            Category category = categoryRepository.findById(dto.categoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException(dto.categoryId()));
+            Category category = categoryRepository.findById(dto.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException(dto.getCategoryId()));
 
             entity.setCategory(category);
 
@@ -90,7 +91,7 @@ public class TransactionService {
         }
     }
 
-    // 🔥 MAPEAMENTO CORRIGIDO (AQUI ERA O ERRO 500)
+    // DTO MAPPER
     private TransactionResponseDTO toResponseDTO(Transaction entity) {
 
         return new TransactionResponseDTO(
@@ -98,8 +99,6 @@ public class TransactionService {
                 entity.getDescription(),
                 entity.getAmount(),
                 entity.getType(),
-
-                // 🔥 EVITA CRASH
                 entity.getCategory() != null
                         ? entity.getCategory().getName()
                         : "Sem categoria"

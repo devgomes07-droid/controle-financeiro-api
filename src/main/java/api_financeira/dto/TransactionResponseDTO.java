@@ -5,6 +5,5 @@ public record TransactionResponseDTO(
         String description,
         Double amount,
         String type,
-        Long categoryId,
-        String categoryName
+        String category
 ) {}
