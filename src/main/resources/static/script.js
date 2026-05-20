@@ -1,131 +1,172 @@
-const API_URL = "https://controle-financeiro-api-kwcz.onrender.com";
+const API_URL const API_URL = "https://controle-financeiro-api-kwcz.onrender.com";
 
-let token = "";
-let barChart;
-let pieChart;
+              let token = "";
+              let barChart = null;
+              let pieChart = null;
 
-// AUTO LOGIN
-window.onload = () => {
-    token = localStorage.getItem("token");
+              // AUTO LOGIN
+              window.onload = () => {
+                  token = localStorage.getItem("token");
 
-    if (token) {
-        document.getElementById("loginBox").classList.add("hidden");
-        document.getElementById("dashboard").classList.remove("hidden");
-        carregar();
-    }
-};
+                  if (token) {
+                      document.getElementById("loginBox").classList.add("hidden");
+                      document.getElementById("dashboard").classList.remove("hidden");
+                      carregar();
+                  }
+              };
 
-// LOGIN
-async function login() {
+              // LOGIN
+              async function login() {
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+                  const email = document.getElementById("email").value;
+                  const password = document.getElementById("password").value;
 
-    const btn = document.getElementById("loginBtn");
-    btn.innerText = "Entrando...";
-    btn.disabled = true;
+                  const btn = document.getElementById("loginBtn");
+                  btn.innerText = "Entrando...";
+                  btn.disabled = true;
 
-    try {
+                  try {
 
-        const res = await fetch(`${API_URL}/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
-        });
+                      const res = await fetch(`${API_URL}/auth/login`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ email, password })
+                      });
 
-        if (!res.ok) {
-            alert("Login inválido");
-            return;
-        }
+                      if (!res.ok) {
+                          alert("Login inválido");
+                          return;
+                      }
 
-        const data = await res.json();
+                      const data = await res.json();
 
-        token = data.token;
-        localStorage.setItem("token", token);
+                      token = data.token;
+                      localStorage.setItem("token", token);
 
-        document.getElementById("loginBox").classList.add("hidden");
-        document.getElementById("dashboard").classList.remove("hidden");
+                      document.getElementById("loginBox").classList.add("hidden");
+                      document.getElementById("dashboard").classList.remove("hidden");
 
-        carregar();
+                      carregar();
 
-    } catch (err) {
-        alert("Erro no login");
-    } finally {
-        btn.innerText = "Entrar";
-        btn.disabled = false;
-    }
-}
+                  } catch (err) {
+                      console.error(err);
+                      alert("Erro no login");
+                  } finally {
+                      btn.innerText = "Entrar";
+                      btn.disabled = false;
+                  }
+              }
 
-// CARREGAR DADOS
-async function carregar() {
+              // CARREGAR DADOS
+              async function carregar() {
 
-    const res = await fetch(`${API_URL}/transactions`, {
-        headers: {
-            "Authorization": `Bearer ${token}`
-        }
-    });
+                  try {
 
-    const data = await res.json();
+                      const res = await fetch(`${API_URL}/transactions`, {
+                          headers: {
+                              "Authorization": `Bearer ${token}`
+                          }
+                      });
 
-    let receitas = 0;
-    let despesas = 0;
+                      if (!res.ok) {
+                          throw new Error("Erro ao buscar transações");
+                      }
 
-    const categorias = {};
+                      const data = await res.json();
 
-    const tbody = document.getElementById("transactionsBody");
-    tbody.innerHTML = "";
+                      let receitas = 0;
+                      let despesas = 0;
 
-    data.forEach(t => {
+                      const categorias = {};
 
-        const tipo = t.type.includes("RECEITA") ? "Receita" : "Despesa";
+                      const tbody = document.getElementById("transactionsBody");
+                      tbody.innerHTML = "";
 
-        if (tipo === "Receita") receitas += t.amount;
-        else despesas += t.amount;
+                      data.forEach(t => {
 
-        const cat = t.category ?? "Sem categoria";
-        categorias[cat] = (categorias[cat] || 0) + 1;
+                          if (!t) return;
 
-        tbody.innerHTML += `
-        <tr>
-            <td>${t.description}</td>
-            <td>${t.amount}</td>
-            <td>${tipo}</td>
-            <td>${cat}</td>
-        </tr>
-        `;
-    });
+                          const type = (t.type ?? "").toUpperCase();
 
-    document.getElementById("receitas").innerText = "R$ " + receitas;
-    document.getElementById("despesas").innerText = "R$ " + despesas;
+                          const isReceita =
+                              type === "RECEITA" ||
+                              type === "INCOME";
 
-    drawCharts(receitas, despesas, categorias);
-}
+                          const tipo = isReceita ? "Receita" : "Despesa";
 
-// GRÁFICOS
-function drawCharts(receitas, despesas, categorias) {
+                          if (isReceita) receitas += t.amount || 0;
+                          else despesas += t.amount || 0;
 
-    if (barChart) barChart.destroy();
-    if (pieChart) pieChart.destroy();
+                          const cat = t.category ?? "Sem categoria";
 
-    barChart = new Chart(document.getElementById("barChart"), {
-        type: "bar",
-        data: {
-            labels: ["Receitas", "Despesas"],
-            datasets: [{
-                data: [receitas, despesas],
-                backgroundColor: ["#00ff88", "#ff4d4d"]
-            }]
-        }
-    });
+                          categorias[cat] = (categorias[cat] || 0) + 1;
 
-    pieChart = new Chart(document.getElementById("pieChart"), {
-        type: "pie",
-        data: {
-            labels: Object.keys(categorias),
-            datasets: [{
-                data: Object.values(categorias),
-                backgroundColor: ["#00d4ff", "#00ff88", "#ff4d4d", "#ffcc00"]
-            }]
-        }
-    });
-}
+                          tbody.innerHTML += `
+                              <tr>
+                                  <td>${t.description ?? "-"}</td>
+                                  <td>${t.amount ?? 0}</td>
+                                  <td>${tipo}</td>
+                                  <td>${cat}</td>
+                              </tr>
+                          `;
+                      });
+
+                      document.getElementById("receitas").innerText = "R$ " + receitas;
+                      document.getElementById("despesas").innerText = "R$ " + despesas;
+
+                      drawCharts(receitas, despesas, categorias);
+
+                  } catch (err) {
+                      console.error(err);
+                      alert("Erro ao carregar dados");
+                  }
+              }
+
+              // GRÁFICOS (CORRIGIDO)
+              function drawCharts(receitas, despesas, categorias) {
+
+                  const barCtx = document.getElementById("barChart");
+                  const pieCtx = document.getElementById("pieChart");
+
+                  if (!barCtx || !pieCtx) return;
+
+                  if (barChart) barChart.destroy();
+                  if (pieChart) pieChart.destroy();
+
+                  barChart = new Chart(barCtx, {
+                      type: "bar",
+                      data: {
+                          labels: ["Receitas", "Despesas"],
+                          datasets: [{
+                              data: [receitas, despesas],
+                              backgroundColor: ["#00ff88", "#ff4d4d"]
+                          }]
+                      },
+                      options: {
+                          responsive: true,
+                          plugins: {
+                              legend: { display: false }
+                          }
+                      }
+                  });
+
+                  pieChart = new Chart(pieCtx, {
+                      type: "pie",
+                      data: {
+                          labels: Object.keys(categorias),
+                          datasets: [{
+                              data: Object.values(categorias),
+                              backgroundColor: [
+                                  "#00d4ff",
+                                  "#00ff88",
+                                  "#ff4d4d",
+                                  "#ffcc00",
+                                  "#a66bff"
+                              ]
+                          }]
+                      },
+                      options: {
+                          responsive: true
+                      }
+                  });
+              }
