@@ -23,6 +23,7 @@ public class TransactionService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    // LISTAR TODOS
     public List<TransactionResponseDTO> findAll() {
         return repository.findAll()
                 .stream()
@@ -30,13 +31,17 @@ public class TransactionService {
                 .toList();
     }
 
+    // BUSCAR POR ID
     public TransactionResponseDTO findById(Long id) {
         Transaction entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
+
         return toResponseDTO(entity);
     }
 
+    // INSERT
     public TransactionResponseDTO insert(TransactionRequestDTO dto) {
+
         Transaction entity = new Transaction();
         entity.setDescription(dto.description());
         entity.setAmount(dto.amount());
@@ -45,12 +50,38 @@ public class TransactionService {
 
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(dto.categoryId()));
+
         entity.setCategory(category);
 
         entity = repository.save(entity);
+
         return toResponseDTO(entity);
     }
 
+    // UPDATE
+    public TransactionResponseDTO update(Long id, TransactionRequestDTO dto) {
+        try {
+            Transaction entity = repository.getReferenceById(id);
+
+            entity.setDescription(dto.description());
+            entity.setAmount(dto.amount());
+            entity.setType(dto.type());
+
+            Category category = categoryRepository.findById(dto.categoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException(dto.categoryId()));
+
+            entity.setCategory(category);
+
+            entity = repository.save(entity);
+
+            return toResponseDTO(entity);
+
+        } catch (EntityNotFoundException e) {
+            throw new ResourceNotFoundException(id);
+        }
+    }
+
+    // DELETE
     public void delete(Long id) {
         try {
             repository.deleteById(id);
@@ -59,31 +90,19 @@ public class TransactionService {
         }
     }
 
-    public TransactionResponseDTO update(Long id, TransactionRequestDTO dto) {
-        try {
-            Transaction entity = repository.getReferenceById(id);
-            entity.setDescription(dto.description());
-            entity.setAmount(dto.amount());
-            entity.setType(dto.type());
-
-            Category category = categoryRepository.findById(dto.categoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException(dto.categoryId()));
-            entity.setCategory(category);
-
-            entity = repository.save(entity);
-            return toResponseDTO(entity);
-        } catch (EntityNotFoundException e) {
-            throw new ResourceNotFoundException(id);
-        }
-    }
-
+    // 🔥 MAPEAMENTO CORRIGIDO (AQUI ERA O ERRO 500)
     private TransactionResponseDTO toResponseDTO(Transaction entity) {
+
         return new TransactionResponseDTO(
                 entity.getId(),
                 entity.getDescription(),
                 entity.getAmount(),
                 entity.getType(),
-                entity.getCategory().getName()
+
+                // 🔥 EVITA CRASH
+                entity.getCategory() != null
+                        ? entity.getCategory().getName()
+                        : "Sem categoria"
         );
     }
 }
