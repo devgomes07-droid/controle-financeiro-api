@@ -14,18 +14,20 @@
 <div class="app">
 
     <!-- LOGIN -->
-    <div class="login-card" id="loginBox">
+    <section id="loginBox" class="login-card">
+
         <h1>💰 Finance AI</h1>
         <p>Entre na sua conta</p>
 
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Senha">
 
-        <button onclick="login()">Entrar</button>
-    </div>
+        <button id="loginBtn" onclick="login()">Entrar</button>
+
+    </section>
 
     <!-- DASHBOARD -->
-    <div class="dashboard" id="dashboard" style="display:none;">
+    <section id="dashboard" class="dashboard hidden">
 
         <div class="top">
 
@@ -57,6 +59,7 @@
 
         <div class="card table">
             <h3>Transações</h3>
+
             <table>
                 <thead>
                 <tr>
@@ -69,9 +72,10 @@
 
                 <tbody id="transactionsBody"></tbody>
             </table>
+
         </div>
 
-    </div>
+    </section>
 
 </div>
 
