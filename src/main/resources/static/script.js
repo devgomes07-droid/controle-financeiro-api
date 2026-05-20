@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8080";
+const API_URL = "https://controle-financeiro-api-kwcz.onrender.com";
 
 let token = "";
 let barChart;
