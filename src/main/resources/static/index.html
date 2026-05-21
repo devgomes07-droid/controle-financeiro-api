@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Financeiro</title>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 <div class="app">
 
@@ -21,6 +19,7 @@
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Senha">
         <button id="loginBtn" onclick="login()">Entrar</button>
+        <p id="loginFeedback"></p>
     </section>
 
     <!-- DASHBOARD -->
@@ -64,7 +63,6 @@
             </table>
         </div>
 
-        <!-- Botão para abrir modal -->
         <button id="openModalBtn">➕ Adicionar Transação</button>
         <button id="logoutBtn" onclick="logout()">Sair</button>
     </section>
@@ -83,7 +81,7 @@
         </select>
         <input type="text" id="catInput" placeholder="Categoria">
         <button onclick="addTransaction()">Salvar</button>
-        <p id="feedbackMsg"></p>
+        <p id="modalFeedback"></p>
     </div>
 </div>
 
@@ -93,3 +91,4 @@
 <script src="script.js"></script>
 </body>
 </html>
+
