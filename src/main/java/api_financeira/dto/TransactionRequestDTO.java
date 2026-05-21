@@ -5,7 +5,7 @@ public class TransactionRequestDTO {
     private String description;
     private Double amount;
     private String type;
-    private Long categoryId;
+    private String categoryName; // ✅ Mudou de categoryId (Long) para categoryName (String)
     private Long userId;
 
     public String getDescription() {
@@ -32,12 +32,12 @@ public class TransactionRequestDTO {
         this.type = type;
     }
 
-    public Long getCategoryId() {
-        return categoryId;
+    public String getCategoryName() {
+        return categoryName;
     }
 
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
     public Long getUserId() {

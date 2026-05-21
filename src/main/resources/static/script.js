@@ -3,7 +3,6 @@ let token = "";
 let barChart = null;
 let pieChart = null;
 
-// ✅ Garante que tudo começa escondido ao carregar a página
 window.onload = () => {
   document.getElementById("loginBox").classList.remove("hidden");
   document.getElementById("dashboard").classList.add("hidden");
@@ -11,7 +10,6 @@ window.onload = () => {
   document.getElementById("loading").classList.add("hidden");
 };
 
-// Funções de feedback
 function showLoginFeedback(msg, type) {
   const feedback = document.getElementById("loginFeedback");
   feedback.innerText = msg;
@@ -24,18 +22,15 @@ function showModalFeedback(msg, type) {
   feedback.className = type;
 }
 
-// ✅ Função de loading corrigida
 function showLoading(show) {
   document.getElementById("loading").classList.toggle("hidden", !show);
 }
 
-// Login
 async function login() {
   const name = document.getElementById("name").value.trim();
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
 
-  // ✅ Valida campos ANTES de mostrar loading
   if (!email || !password) {
     showLoginFeedback("Preencha o email e a senha.", "error");
     return;
@@ -61,14 +56,12 @@ async function login() {
     const data = await res.json();
     token = data.token;
 
-    // ✅ Pega o nome: do campo, ou do retorno da API, ou "Usuário"
     const nomeExibido = name || data.name || data.user?.name || "Usuário";
 
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
     document.getElementById("welcomeMsg").innerText = `👋 Olá, ${nomeExibido}! Bem-vindo ao seu painel financeiro.`;
 
-    // Configura modal
     document.getElementById("openModalBtn").onclick = () => {
       document.getElementById("modal").classList.remove("hidden");
     };
@@ -86,7 +79,6 @@ async function login() {
   }
 }
 
-// Logout
 function logout() {
   token = "";
   barChart = null;
@@ -99,7 +91,6 @@ function logout() {
   document.getElementById("password").value = "";
 }
 
-// Carregar transações
 async function carregar() {
   showLoading(true);
   try {
@@ -116,7 +107,7 @@ async function carregar() {
       const type = (t.type ?? "").toUpperCase();
       const isReceita = type === "INCOME" || type === "RECEITA";
       if (isReceita) receitas += t.amount; else despesas += t.amount;
-      const cat = t.category?.name ?? "Outros";
+      const cat = t.category?.name ?? t.category ?? "Outros";
       categorias[cat] = (categorias[cat] || 0) + t.amount;
 
       tbody.innerHTML += `
@@ -138,44 +129,40 @@ async function carregar() {
   }
 }
 
-// Gráficos
 function drawCharts(receitas, despesas, categorias) {
   const barCtx = document.getElementById("barChart");
   const pieCtx = document.getElementById("pieChart");
 
-  if (!barChart) {
-    barChart = new Chart(barCtx, {
-      type: "bar",
-      data: {
-        labels: ["Receitas", "Despesas"],
-        datasets: [{ data: [receitas, despesas], backgroundColor: ["#00ff88", "#ff4d4d"] }]
-      },
-      options: { plugins: { legend: { display: false } } }
-    });
-  } else {
-    barChart.data.datasets[0].data = [receitas, despesas];
-    barChart.update();
-  }
+  // ✅ Destroi antes de recriar — resolve gráficos sumindo
+  if (barChart) { barChart.destroy(); barChart = null; }
+  if (pieChart) { pieChart.destroy(); pieChart = null; }
 
-  if (!pieChart) {
+  barChart = new Chart(barCtx, {
+    type: "bar",
+    data: {
+      labels: ["Receitas", "Despesas"],
+      datasets: [{ data: [receitas, despesas], backgroundColor: ["#00ff88", "#ff4d4d"] }]
+    },
+    options: { plugins: { legend: { display: false } } }
+  });
+
+  const labelsCategoria = Object.keys(categorias);
+  const valoresCategoria = Object.values(categorias);
+
+  if (labelsCategoria.length > 0) {
     pieChart = new Chart(pieCtx, {
       type: "pie",
       data: {
-        labels: Object.keys(categorias),
+        labels: labelsCategoria,
         datasets: [{
-          data: Object.values(categorias),
+          data: valoresCategoria,
           backgroundColor: ["#00d4ff", "#00ff88", "#ff4d4d", "#ffcc00", "#a66bff"]
         }]
       }
     });
-  } else {
-    pieChart.data.labels = Object.keys(categorias);
-    pieChart.data.datasets[0].data = Object.values(categorias);
-    pieChart.update();
   }
 }
 
-// Adicionar transação
 async function addTransaction() {
   const desc = document.getElementById("descInput").value.trim();
   const amount = parseFloat(document.getElementById("amountInput").value);
@@ -196,7 +183,8 @@ async function addTransaction() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ description: desc, amount, type, category: cat })
+      // ✅ categoryName em vez de category
+      body: JSON.stringify({ description: desc, amount, type, categoryName: cat })
     });
 
     if (!res.ok) {

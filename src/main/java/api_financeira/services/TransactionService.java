@@ -49,8 +49,9 @@ public class TransactionService {
         entity.setType(dto.getType());
         entity.setDate(Instant.now());
 
-        Category category = categoryRepository.findById(dto.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException(dto.getCategoryId()));
+        // ✅ Busca categoria pelo nome agora
+        Category category = categoryRepository.findByNameIgnoreCase(dto.getCategoryName())
+                .orElseThrow(() -> new ResourceNotFoundException(0L));
 
         entity.setCategory(category);
 
@@ -68,8 +69,9 @@ public class TransactionService {
             entity.setAmount(dto.getAmount());
             entity.setType(dto.getType());
 
-            Category category = categoryRepository.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException(dto.getCategoryId()));
+            // ✅ Busca categoria pelo nome no update também
+            Category category = categoryRepository.findByNameIgnoreCase(dto.getCategoryName())
+                    .orElseThrow(() -> new ResourceNotFoundException(0L));
 
             entity.setCategory(category);
 
