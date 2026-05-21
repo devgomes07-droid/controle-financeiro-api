@@ -54,6 +54,19 @@ body {
   display: none;
 }
 
+#welcomeMsg {
+  font-size: 1.4em;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+  animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .top {
   display: flex;
   gap: 20px;
@@ -106,10 +119,10 @@ body {
   font-size: 1.2em;
 }
 
-/* Botão logout */
-#logoutBtn {
+/* Botões */
+#logoutBtn, #openModalBtn {
   margin-top: 20px;
-  background: #ff4d4d;
+  background: #00d4ff;
   color: #fff;
   border: none;
   padding: 12px;
@@ -119,11 +132,39 @@ body {
 }
 
 #logoutBtn:hover {
-  background: #cc0000;
+  background: #ff4d4d;
 }
 
-/* Form de adicionar transação */
-.card input, .card select, .card button {
+#openModalBtn:hover {
+  background: #009ec2;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  position: relative;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.close {
+  position: absolute;
+  top: 10px; right: 15px;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+
+.modal-content input, .modal-content select, .modal-content button {
   margin: 8px 0;
   padding: 10px;
   width: 100%;
@@ -131,7 +172,7 @@ body {
   border: 1px solid #ccc;
 }
 
-.card button {
+.modal-content button {
   background: #00ff88;
   color: #333;
   font-weight: 600;
@@ -139,6 +180,31 @@ body {
   cursor: pointer;
 }
 
-.card button:hover {
+.modal-content button:hover {
   background: #00cc66;
+}
+
+/* Feedback */
+#feedbackMsg {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.success {
+  color: green;
+}
+
+.error {
+  color: red;
+}
+
+/* Loading */
+.loading {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255,255,255,0.8);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5em;
+  font-weight: bold;
 }

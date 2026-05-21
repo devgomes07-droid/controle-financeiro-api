@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Dashboard</title>
+    <title>Painel Financeiro</title>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
     <section id="loginBox" class="login-card">
         <h1>💰 Finance AI</h1>
         <p>Entre na sua conta</p>
+        <input type="text" id="name" placeholder="Nome">
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Senha">
         <button id="loginBtn" onclick="login()">Entrar</button>
@@ -63,22 +64,31 @@
             </table>
         </div>
 
-        <!-- Área para adicionar transações -->
-        <div class="card">
-            <h3>Adicionar Transação</h3>
-            <input type="text" id="descInput" placeholder="Descrição">
-            <input type="number" id="amountInput" placeholder="Valor">
-            <select id="typeInput">
-                <option value="RECEITA">Receita</option>
-                <option value="DESPESA">Despesa</option>
-            </select>
-            <input type="text" id="catInput" placeholder="Categoria">
-            <button onclick="addTransaction()">Adicionar</button>
-        </div>
-
+        <!-- Botão para abrir modal -->
+        <button id="openModalBtn">➕ Adicionar Transação</button>
         <button id="logoutBtn" onclick="logout()">Sair</button>
     </section>
 </div>
+
+<!-- Modal -->
+<div id="modal" class="modal hidden">
+    <div class="modal-content">
+        <span id="closeModalBtn" class="close">&times;</span>
+        <h3>Nova Transação</h3>
+        <input type="text" id="descInput" placeholder="Descrição">
+        <input type="number" id="amountInput" placeholder="Valor">
+        <select id="typeInput">
+            <option value="RECEITA">Receita</option>
+            <option value="DESPESA">Despesa</option>
+        </select>
+        <input type="text" id="catInput" placeholder="Categoria">
+        <button onclick="addTransaction()">Salvar</button>
+        <p id="feedbackMsg"></p>
+    </div>
+</div>
+
+<!-- Tela de carregamento -->
+<div id="loading" class="loading hidden">⏳ Carregando...</div>
 
 <script src="script.js"></script>
 </body>

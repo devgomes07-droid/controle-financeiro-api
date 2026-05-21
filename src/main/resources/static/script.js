@@ -5,13 +5,22 @@ let pieChart = null;
 
 // LOGIN sempre obrigatório
 window.onload = () => {
-  localStorage.removeItem("token"); // força login sempre
+  localStorage.removeItem("token");
   document.getElementById("loginBox").classList.remove("hidden");
   document.getElementById("dashboard").classList.add("hidden");
+
+  // abrir/fechar modal
+  document.getElementById("openModalBtn").onclick = () => {
+    document.getElementById("modal").classList.remove("hidden");
+  };
+  document.getElementById("closeModalBtn").onclick = () => {
+    document.getElementById("modal").classList.add("hidden");
+  };
 };
 
 // LOGIN
 async function login() {
+  const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   const btn = document.getElementById("loginBtn");
@@ -26,7 +35,7 @@ async function login() {
     });
 
     if (!res.ok) {
-      alert("Login inválido");
+      showFeedback("Login inválido", "error");
       return;
     }
 
@@ -36,14 +45,13 @@ async function login() {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
 
-    const userName = data.user?.name || email;
-    document.getElementById("welcomeMsg").innerText = `Olá, ${userName}, bem-vindo de volta!`;
+    document.getElementById("welcomeMsg").innerText = `👋 Olá, ${name}! Bem-vindo ao seu painel financeiro.`;
 
     carregar();
 
   } catch (err) {
     console.error(err);
-    alert("Erro no login");
+    showFeedback("Erro no login", "error");
   } finally {
     btn.innerText = "Entrar";
     btn.disabled = false;
@@ -60,6 +68,7 @@ function logout() {
 
 // CARREGAR DADOS
 async function carregar() {
+  showLoading(true);
   try {
     const res = await fetch(`${API_URL}/transactions`, {
       headers: { "Authorization": `Bearer ${token}` }
@@ -77,13 +86,13 @@ async function carregar() {
     data.forEach(t => {
       if (!t) return;
       const type = (t.type ?? "").toUpperCase();
-      const isReceita = type === "RECEITA" || type === "INCOME";
+      const isReceita = type === "INCOME";
       const tipo = isReceita ? "Receita" : "Despesa";
 
       if (isReceita) receitas += t.amount || 0;
       else despesas += t.amount || 0;
 
-      const cat = t.category ?? "Outros";
+      const cat = t.category?.name ?? "Outros";
       categorias[cat] = (categorias[cat] || 0) + (t.amount || 0);
 
       const valorFormatado = (t.amount ?? 0).toFixed(2);
@@ -105,7 +114,9 @@ async function carregar() {
 
   } catch (err) {
     console.error(err);
-    alert("Erro ao carregar dados");
+    showFeedback("Erro ao carregar dados", "error");
+  } finally {
+    showLoading(false);
   }
 }
 
@@ -125,7 +136,13 @@ function drawCharts(receitas, despesas, categorias) {
           backgroundColor: ["#00ff88", "#ff4d4d"]
         }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } } }
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `R$ ${ctx.raw.toFixed(2)}` } }
+        }
+      }
     });
   } else {
     barChart.data.datasets[0].data = [receitas, despesas];
@@ -142,7 +159,12 @@ function drawCharts(receitas, despesas, categorias) {
           backgroundColor: ["#00d4ff", "#00ff88", "#ff4d4d", "#ffcc00", "#a66bff"]
         }]
       },
-      options: { responsive: true }
+      options: {
+        responsive: true,
+        plugins: {
+          tooltip: { callbacks: { label: ctx => `${ctx.label}: R$ ${ctx.raw.toFixed(2)}` } }
+        }
+      }
     });
   } else {
     pieChart.data.labels = Object.keys(categorias);
@@ -153,10 +175,18 @@ function drawCharts(receitas, despesas, categorias) {
 
 // ADICIONAR TRANSAÇÃO
 async function addTransaction() {
-  const desc = document.getElementById("descInput").value;
+  const desc = document.getElementById("descInput").value.trim();
   const amount = parseFloat(document.getElementById("amountInput").value);
-  const type = document.getElementById("typeInput").value;
-  const cat = document.getElementById("catInput").value;
+  const type = document.getElementById("typeInput").value; // RECEITA ou DESPESA
+  const catId = parseInt(document.getElementById("catInput").value); // ID da categoria
+  const userId = 1; // exemplo fixo, depois pegar do login
+
+  if (!desc || isNaN(amount) || amount <= 0 || !type || isNaN(catId)) {
+    showFeedback("Preencha todos os campos corretamente", "error");
+    return;
+  }
+
+  const backendType = type === "RECEITA" ? "INCOME" : "EXPENSE";
 
   try {
     const res = await fetch(`${API_URL}/transactions`, {
@@ -165,16 +195,41 @@ async function addTransaction() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ description: desc, amount, type, category: cat })
+      body: JSON.stringify({
+        description: desc,
+        amount: amount,
+        type: backendType,
+        categoryId: catId,
+        userId: userId
+      })
     });
 
-    if (!res.ok) throw new Error("Erro ao adicionar transação");
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Erro backend:", errorText);
+      throw new Error("Erro ao adicionar transação");
+    }
 
-    alert("Transação adicionada com sucesso!");
+    showFeedback("✅ Transação adicionada com sucesso!", "success");
+    document.getElementById("modal").classList.add("hidden");
     carregar();
 
   } catch (err) {
     console.error(err);
-    alert("Erro ao salvar transação");
+    showFeedback("❌ Erro ao salvar transação", "error");
   }
+}
+
+// FEEDBACK
+function showFeedback(msg, type) {
+  const feedback = document.getElementById("feedbackMsg");
+  feedback.innerText = msg;
+  feedback.className = type; // aplica CSS .success ou .error
+}
+
+// LOADING
+function showLoading(state) {
+  const loading = document.getElementById("loading");
+  if (state) loading.classList.remove("hidden");
+  else loading.classList.add("hidden");
 }
