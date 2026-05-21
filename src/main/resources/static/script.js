@@ -10,6 +10,25 @@ window.onload = () => {
   document.getElementById("loading").classList.add("hidden");
 };
 
+// Funções de feedback
+function showLoginFeedback(msg, type) {
+  const feedback = document.getElementById("loginFeedback");
+  feedback.innerText = msg;
+  feedback.className = type;
+}
+
+function showModalFeedback(msg, type) {
+  const feedback = document.getElementById("modalFeedback");
+  feedback.innerText = msg;
+  feedback.className = type;
+}
+
+// Função de loading
+function showLoading(show) {
+  document.getElementById("loading").classList.toggle("hidden", !show);
+}
+
+// Login
 async function login() {
   const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
@@ -35,4 +54,132 @@ async function login() {
     const data = await res.json();
     token = data.token;
 
-    document.getElementById("
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    document.getElementById("welcomeMsg").innerText = `👋 Olá, ${name}! Bem-vindo ao seu painel financeiro.`;
+
+    // Configura modal
+    document.getElementById("openModalBtn").onclick = () => {
+      document.getElementById("modal").classList.remove("hidden");
+    };
+    document.getElementById("closeModalBtn").onclick = () => {
+      document.getElementById("modal").classList.add("hidden");
+    };
+
+    carregar();
+  } catch (err) {
+    showLoginFeedback("Erro no login", "error");
+  } finally {
+    btn.innerText = "Entrar";
+    btn.disabled = false;
+    showLoading(false);
+  }
+}
+
+// Logout
+function logout() {
+  token = "";
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("loginBox").classList.remove("hidden");
+}
+
+// Carregar transações
+async function carregar() {
+  showLoading(true);
+  try {
+    const res = await fetch(`${API_URL}/transactions`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    let receitas = 0, despesas = 0, categorias = {};
+    const tbody = document.getElementById("transactionsBody");
+    tbody.innerHTML = "";
+
+    data.forEach(t => {
+      const type = (t.type ?? "").toUpperCase();
+      const isReceita = type === "INCOME" || type === "RECEITA";
+      if (isReceita) receitas += t.amount; else despesas += t.amount;
+      const cat = t.category?.name ?? "Outros";
+      categorias[cat] = (categorias[cat] || 0) + t.amount;
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${t.description}</td>
+          <td ${isReceita ? "style='color:green'" : "style='color:red'"}>R$ ${t.amount.toFixed(2)}</td>
+          <td>${isReceita ? "Receita" : "Despesa"}</td>
+          <td>${cat}</td>
+        </tr>`;
+    });
+
+    document.getElementById("receitas").innerText = "R$ " + receitas.toFixed(2);
+    document.getElementById("despesas").innerText = "R$ " + despesas.toFixed(2);
+    drawCharts(receitas, despesas, categorias);
+  } catch {
+    showLoginFeedback("Erro ao carregar dados", "error");
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Gráficos
+function drawCharts(receitas, despesas, categorias) {
+  const barCtx = document.getElementById("barChart");
+  const pieCtx = document.getElementById("pieChart");
+
+  if (!barChart) {
+    barChart = new Chart(barCtx, {
+      type: "bar",
+      data: { labels: ["Receitas", "Despesas"], datasets: [{ data: [receitas, despesas], backgroundColor: ["#00ff88", "#ff4d4d"] }] },
+      options: { plugins: { legend: { display: false } } }
+    });
+  } else {
+    barChart.data.datasets[0].data = [receitas, despesas];
+    barChart.update();
+  }
+
+  if (!pieChart) {
+    pieChart = new Chart(pieCtx, {
+      type: "pie",
+      data: { labels: Object.keys(categorias), datasets: [{ data: Object.values(categorias), backgroundColor: ["#00d4ff", "#00ff88", "#ff4d4d", "#ffcc00", "#a66bff"] }] }
+    });
+  } else {
+    pieChart.data.labels = Object.keys(categorias);
+    pieChart.data.datasets[0].data = Object.values(categorias);
+    pieChart.update();
+  }
+}
+
+// Adicionar transação
+async function addTransaction() {
+  const desc = document.getElementById("descInput").value;
+  const amount = parseFloat(document.getElementById("amountInput").value);
+  const type = document.getElementById("typeInput").value;
+  const cat = document.getElementById("catInput").value;
+
+  showLoading(true);
+
+  try {
+    const res = await fetch(`${API_URL}/transactions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ description: desc, amount, type, category: cat })
+    });
+
+    if (!res.ok) {
+      showModalFeedback("Erro ao salvar transação", "error");
+      return;
+    }
+
+    showModalFeedback("Transação salva com sucesso!", "success");
+    document.getElementById("modal").classList.add("hidden");
+    carregar();
+  } catch {
+    showModalFeedback("Erro de conexão", "error");
+  } finally {
+    showLoading(false);
+  }
+}
