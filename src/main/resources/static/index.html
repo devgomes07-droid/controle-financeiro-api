@@ -24,6 +24,8 @@
 
     <!-- DASHBOARD -->
     <section id="dashboard" class="dashboard hidden">
+        <h2 id="welcomeMsg"></h2>
+
         <div class="top">
             <div class="card">
                 <h3>Receitas</h3>
@@ -61,6 +63,19 @@
             </table>
         </div>
 
+        <!-- Área para adicionar transações -->
+        <div class="card">
+            <h3>Adicionar Transação</h3>
+            <input type="text" id="descInput" placeholder="Descrição">
+            <input type="number" id="amountInput" placeholder="Valor">
+            <select id="typeInput">
+                <option value="RECEITA">Receita</option>
+                <option value="DESPESA">Despesa</option>
+            </select>
+            <input type="text" id="catInput" placeholder="Categoria">
+            <button onclick="addTransaction()">Adicionar</button>
+        </div>
+
         <button id="logoutBtn" onclick="logout()">Sair</button>
     </section>
 </div>
@@ -68,4 +83,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-

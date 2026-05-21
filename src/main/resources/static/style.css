@@ -1,130 +1,144 @@
-/* style.css */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-}
-
+/* Fonte e reset */
 body {
-    background: linear-gradient(135deg, #0b0f1a, #1a2238);
-    color: white;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f7fa;
+  color: #333;
 }
 
 .app {
-    padding: 20px;
-    max-width: 1200px;
-    margin: auto;
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
 }
 
-/* LOGIN */
+/* Login */
 .login-card {
-    width: 100%;
-    max-width: 360px;
-    margin: 120px auto;
-    padding: 30px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.06);
-    backdrop-filter: blur(10px);
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
 }
 
 .login-card input {
-    width: 100%;
-    margin: 10px 0;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    background: #111827;
-    color: white;
-    outline: none;
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
-/* BOTÃO */
-button {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #00d4ff, #0077ff);
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
+.login-card button {
+  background: #00d4ff;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
 }
 
-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(0,212,255,0.6);
+.login-card button:hover {
+  background: #009ec2;
 }
 
-/* DASHBOARD */
+/* Dashboard */
+.dashboard {
+  margin-top: 20px;
+}
+
 .hidden {
-    display: none;
+  display: none;
 }
 
 .top {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 15px;
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
 .card {
-    background: rgba(255,255,255,0.06);
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    transition: 0.3s;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  flex: 1;
 }
 
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+.card h3 {
+  margin-top: 0;
 }
 
-/* CHARTS */
 .charts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-canvas {
-    width: 100% !important;
+.table table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-/* TABLE */
-.table {
-    margin-top: 20px;
-    overflow-x: auto;
+.table th, .table td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 600px;
+.table th {
+  background: #f0f0f0;
 }
 
-th, td {
-    padding: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+/* Valores coloridos */
+#receitas {
+  color: green;
+  font-weight: bold;
+  font-size: 1.2em;
 }
 
-/* RESPONSIVIDADE */
-@media (max-width: 600px) {
-    .login-card {
-        margin: 60px auto;
-        padding: 20px;
-    }
-
-    .card {
-        padding: 15px;
-    }
-
-    h1 {
-        font-size: 1.4rem;
-    }
+#despesas {
+  color: red;
+  font-weight: bold;
+  font-size: 1.2em;
 }
+
+/* Botão logout */
+#logoutBtn {
+  margin-top: 20px;
+  background: #ff4d4d;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#logoutBtn:hover {
+  background: #cc0000;
+}
+
+/* Form de adicionar transação */
+.card input, .card select, .card button {
+  margin: 8px 0;
+  padding: 10px;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.card button {
+  background: #00ff88;
+  color: #333;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.card button:hover {
+  background: #00cc66;
 }
