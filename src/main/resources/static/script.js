@@ -5,17 +5,9 @@ let pieChart = null;
 
 // LOGIN sempre obrigatório
 window.onload = () => {
-  localStorage.removeItem("token");
+  // ao iniciar, mostra apenas login
   document.getElementById("loginBox").classList.remove("hidden");
   document.getElementById("dashboard").classList.add("hidden");
-
-  // abrir/fechar modal
-  document.getElementById("openModalBtn").onclick = () => {
-    document.getElementById("modal").classList.remove("hidden");
-  };
-  document.getElementById("closeModalBtn").onclick = () => {
-    document.getElementById("modal").classList.add("hidden");
-  };
 };
 
 // LOGIN
@@ -24,8 +16,10 @@ async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   const btn = document.getElementById("loginBtn");
+
   btn.innerText = "Entrando...";
   btn.disabled = true;
+  showLoading(true);
 
   try {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -42,10 +36,19 @@ async function login() {
     const data = await res.json();
     token = data.token;
 
+    // libera dashboard
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
 
     document.getElementById("welcomeMsg").innerText = `👋 Olá, ${name}! Bem-vindo ao seu painel financeiro.`;
+
+    // só agora habilita o botão de nova transação
+    document.getElementById("openModalBtn").onclick = () => {
+      document.getElementById("modal").classList.remove("hidden");
+    };
+    document.getElementById("closeModalBtn").onclick = () => {
+      document.getElementById("modal").classList.add("hidden");
+    };
 
     carregar();
 
@@ -55,6 +58,7 @@ async function login() {
   } finally {
     btn.innerText = "Entrar";
     btn.disabled = false;
+    showLoading(false);
   }
 }
 
@@ -180,6 +184,11 @@ async function addTransaction() {
   const type = document.getElementById("typeInput").value; // RECEITA ou DESPESA
   const catId = parseInt(document.getElementById("catInput").value); // ID da categoria
   const userId = 1; // exemplo fixo, depois pegar do login
+
+  if (!token) {
+    showFeedback("⚠️ Faça login antes de salvar transações", "error");
+    return;
+  }
 
   if (!desc || isNaN(amount) || amount <= 0 || !type || isNaN(catId)) {
     showFeedback("Preencha todos os campos corretamente", "error");
