@@ -107,7 +107,9 @@ async function carregar() {
       const type = (t.type ?? "").toUpperCase();
       const isReceita = type === "INCOME" || type === "RECEITA";
       if (isReceita) receitas += t.amount; else despesas += t.amount;
-      const cat = t.category?.name ?? t.category ?? "Outros";
+
+      // ✅ category agora é String direta, não objeto
+      const cat = t.category ?? "Outros";
       categorias[cat] = (categorias[cat] || 0) + t.amount;
 
       tbody.innerHTML += `
@@ -116,6 +118,9 @@ async function carregar() {
           <td ${isReceita ? "style='color:green'" : "style='color:red'"}>R$ ${t.amount.toFixed(2)}</td>
           <td>${isReceita ? "Receita" : "Despesa"}</td>
           <td>${cat}</td>
+          <td>
+            <button onclick="deletar(${t.id})" style="background:#ff4d4d;color:#fff;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑 Deletar</button>
+          </td>
         </tr>`;
     });
 
@@ -124,6 +129,30 @@ async function carregar() {
     drawCharts(receitas, despesas, categorias);
   } catch {
     showLoginFeedback("Erro ao carregar dados.", "error");
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ✅ Função de deletar transação
+async function deletar(id) {
+  if (!confirm("Tem certeza que quer deletar essa transação?")) return;
+
+  showLoading(true);
+  try {
+    const res = await fetch(`${API_URL}/transactions/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    if (!res.ok) {
+      alert("Erro ao deletar transação.");
+      return;
+    }
+
+    carregar();
+  } catch {
+    alert("Erro de conexão.");
   } finally {
     showLoading(false);
   }
