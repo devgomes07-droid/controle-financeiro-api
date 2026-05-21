@@ -1,12 +1,13 @@
+/* style.css */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
 }
 
 body {
-    background: #0b0f1a;
+    background: linear-gradient(135deg, #0b0f1a, #1a2238);
     color: white;
 }
 
@@ -23,10 +24,8 @@ body {
     margin: 120px auto;
     padding: 30px;
     border-radius: 16px;
-
     background: rgba(255,255,255,0.06);
     backdrop-filter: blur(10px);
-
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
@@ -35,10 +34,8 @@ body {
     width: 100%;
     margin: 10px 0;
     padding: 12px;
-
     border: none;
     border-radius: 10px;
-
     background: #111827;
     color: white;
     outline: none;
@@ -48,20 +45,18 @@ body {
 button {
     width: 100%;
     padding: 12px;
-
     border: none;
     border-radius: 10px;
-
     background: linear-gradient(135deg, #00d4ff, #0077ff);
     color: white;
-
     font-weight: bold;
     cursor: pointer;
     transition: 0.3s;
 }
 
 button:hover {
-    transform: scale(1.03);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(0,212,255,0.6);
 }
 
 /* DASHBOARD */
@@ -79,8 +74,13 @@ button:hover {
     background: rgba(255,255,255,0.06);
     padding: 20px;
     border-radius: 16px;
-
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.5);
 }
 
 /* CHARTS */
@@ -110,4 +110,21 @@ table {
 th, td {
     padding: 12px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 600px) {
+    .login-card {
+        margin: 60px auto;
+        padding: 20px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 1.4rem;
+    }
+}
 }
