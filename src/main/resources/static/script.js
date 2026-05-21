@@ -3,6 +3,7 @@ let token = "";
 let barChart = null;
 let pieChart = null;
 
+// ✅ Garante que tudo começa escondido ao carregar a página
 window.onload = () => {
   document.getElementById("loginBox").classList.remove("hidden");
   document.getElementById("dashboard").classList.add("hidden");
@@ -23,18 +24,24 @@ function showModalFeedback(msg, type) {
   feedback.className = type;
 }
 
-// Função de loading
+// ✅ Função de loading corrigida
 function showLoading(show) {
   document.getElementById("loading").classList.toggle("hidden", !show);
 }
 
 // Login
 async function login() {
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  const btn = document.getElementById("loginBtn");
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
+  // ✅ Valida campos ANTES de mostrar loading
+  if (!email || !password) {
+    showLoginFeedback("Preencha o email e a senha.", "error");
+    return;
+  }
+
+  const btn = document.getElementById("loginBtn");
   btn.innerText = "Entrando...";
   btn.disabled = true;
   showLoading(true);
@@ -47,16 +54,19 @@ async function login() {
     });
 
     if (!res.ok) {
-      showLoginFeedback("Login inválido", "error");
+      showLoginFeedback("Email ou senha inválidos.", "error");
       return;
     }
 
     const data = await res.json();
     token = data.token;
 
+    // ✅ Pega o nome: do campo, ou do retorno da API, ou "Usuário"
+    const nomeExibido = name || data.name || data.user?.name || "Usuário";
+
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
-    document.getElementById("welcomeMsg").innerText = `👋 Olá, ${name}! Bem-vindo ao seu painel financeiro.`;
+    document.getElementById("welcomeMsg").innerText = `👋 Olá, ${nomeExibido}! Bem-vindo ao seu painel financeiro.`;
 
     // Configura modal
     document.getElementById("openModalBtn").onclick = () => {
@@ -68,7 +78,7 @@ async function login() {
 
     carregar();
   } catch (err) {
-    showLoginFeedback("Erro no login", "error");
+    showLoginFeedback("Erro de conexão. Tente novamente.", "error");
   } finally {
     btn.innerText = "Entrar";
     btn.disabled = false;
@@ -79,8 +89,14 @@ async function login() {
 // Logout
 function logout() {
   token = "";
+  barChart = null;
+  pieChart = null;
   document.getElementById("dashboard").classList.add("hidden");
   document.getElementById("loginBox").classList.remove("hidden");
+  document.getElementById("loginFeedback").innerText = "";
+  document.getElementById("name").value = "";
+  document.getElementById("email").value = "";
+  document.getElementById("password").value = "";
 }
 
 // Carregar transações
@@ -116,7 +132,7 @@ async function carregar() {
     document.getElementById("despesas").innerText = "R$ " + despesas.toFixed(2);
     drawCharts(receitas, despesas, categorias);
   } catch {
-    showLoginFeedback("Erro ao carregar dados", "error");
+    showLoginFeedback("Erro ao carregar dados.", "error");
   } finally {
     showLoading(false);
   }
@@ -130,7 +146,10 @@ function drawCharts(receitas, despesas, categorias) {
   if (!barChart) {
     barChart = new Chart(barCtx, {
       type: "bar",
-      data: { labels: ["Receitas", "Despesas"], datasets: [{ data: [receitas, despesas], backgroundColor: ["#00ff88", "#ff4d4d"] }] },
+      data: {
+        labels: ["Receitas", "Despesas"],
+        datasets: [{ data: [receitas, despesas], backgroundColor: ["#00ff88", "#ff4d4d"] }]
+      },
       options: { plugins: { legend: { display: false } } }
     });
   } else {
@@ -141,7 +160,13 @@ function drawCharts(receitas, despesas, categorias) {
   if (!pieChart) {
     pieChart = new Chart(pieCtx, {
       type: "pie",
-      data: { labels: Object.keys(categorias), datasets: [{ data: Object.values(categorias), backgroundColor: ["#00d4ff", "#00ff88", "#ff4d4d", "#ffcc00", "#a66bff"] }] }
+      data: {
+        labels: Object.keys(categorias),
+        datasets: [{
+          data: Object.values(categorias),
+          backgroundColor: ["#00d4ff", "#00ff88", "#ff4d4d", "#ffcc00", "#a66bff"]
+        }]
+      }
     });
   } else {
     pieChart.data.labels = Object.keys(categorias);
@@ -152,10 +177,15 @@ function drawCharts(receitas, despesas, categorias) {
 
 // Adicionar transação
 async function addTransaction() {
-  const desc = document.getElementById("descInput").value;
+  const desc = document.getElementById("descInput").value.trim();
   const amount = parseFloat(document.getElementById("amountInput").value);
   const type = document.getElementById("typeInput").value;
-  const cat = document.getElementById("catInput").value;
+  const cat = document.getElementById("catInput").value.trim();
+
+  if (!desc || isNaN(amount) || !cat) {
+    showModalFeedback("Preencha todos os campos.", "error");
+    return;
+  }
 
   showLoading(true);
 
@@ -170,15 +200,23 @@ async function addTransaction() {
     });
 
     if (!res.ok) {
-      showModalFeedback("Erro ao salvar transação", "error");
+      showModalFeedback("Erro ao salvar transação.", "error");
       return;
     }
 
     showModalFeedback("Transação salva com sucesso!", "success");
-    document.getElementById("modal").classList.add("hidden");
+    document.getElementById("descInput").value = "";
+    document.getElementById("amountInput").value = "";
+    document.getElementById("catInput").value = "";
+
+    setTimeout(() => {
+      document.getElementById("modal").classList.add("hidden");
+      document.getElementById("modalFeedback").innerText = "";
+    }, 1500);
+
     carregar();
   } catch {
-    showModalFeedback("Erro de conexão", "error");
+    showModalFeedback("Erro de conexão.", "error");
   } finally {
     showLoading(false);
   }

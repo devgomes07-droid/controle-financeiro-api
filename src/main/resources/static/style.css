@@ -9,7 +9,8 @@ body {
 
 .app { max-width: 1000px; margin: auto; padding: 20px; }
 
-.hidden { display: none; }
+/* ✅ CORREÇÃO DO BUG: .hidden sempre vence */
+.hidden { display: none !important; }
 
 /* Login */
 .login-card {
@@ -19,8 +20,8 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   text-align: center;
 }
-.login-card input { width: 100%; margin: 10px 0; padding: 12px; border: 1px solid #ccc; border-radius: 6px; }
-.login-card button { background: #00d4ff; color: #fff; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.login-card input { width: 100%; margin: 10px 0; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+.login-card button { background: #00d4ff; color: #fff; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; }
 .login-card button:hover { background: #009ec2; }
 
 /* Dashboard */
@@ -45,10 +46,25 @@ body {
 #openModalBtn:hover { background: #009ec2; }
 
 /* Modal */
-.modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; }
+/* ✅ Modal também sem display aqui — controlado só pelo .hidden */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+}
+/* Quando visível, usa flex */
+.modal:not(.hidden) {
+  display: flex;
+}
+
 .modal-content { background:#fff; padding:20px; border-radius:10px; width:400px; position:relative; animation: fadeIn 0.5s ease-in-out; }
 .close { position:absolute; top:10px; right:15px; font-size:1.5em; cursor:pointer; }
-.modal-content input, .modal-content select, .modal-content button { margin:8px 0; padding:10px; width:100%; border-radius:6px; border:1px solid #ccc; }
+.modal-content input, .modal-content select, .modal-content button { margin:8px 0; padding:10px; width:100%; border-radius:6px; border:1px solid #ccc; box-sizing: border-box; }
 .modal-content button { background:#00ff88; color:#333; font-weight:600; border:none; cursor:pointer; }
 .modal-content button:hover { background:#00cc66; }
 
@@ -57,6 +73,21 @@ body {
 .success { color: green; }
 .error { color: red; }
 
-/* Loading */
-.loading { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); display:flex; align-items:center; justify-content:center; font-size:1.5em; font-weight:bold; }
-
+/* ✅ CORREÇÃO PRINCIPAL: Loading SEM display:flex hardcoded */
+.loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.8);
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5em;
+  font-weight: bold;
+  z-index: 9999;
+}
+/* Quando visível, usa flex */
+.loading:not(.hidden) {
+  display: flex;
+}
