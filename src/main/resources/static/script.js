@@ -1,4 +1,3 @@
-// script.js
 const API_URL = "https://controle-financeiro-api-kwcz.onrender.com";
 let token = "";
 let barChart = null;
@@ -92,4 +91,54 @@ async function carregar() {
                     <td>${t.description ?? "-"}</td>
                     <td>${t.amount ?? 0}</td>
                     <td>${tipo}</td>
-                    <td>${cat
+                    <td>${cat}</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById("receitas").innerText = "R$ " + receitas;
+        document.getElementById("despesas").innerText = "R$ " + despesas;
+        drawCharts(receitas, despesas, categorias);
+
+    } catch (err) {
+        console.error(err);
+        alert("Erro ao carregar dados");
+    }
+}
+
+// GRÁFICOS
+function drawCharts(receitas, despesas, categorias) {
+    const barCtx = document.getElementById("barChart");
+    const pieCtx = document.getElementById("pieChart");
+    if (!barCtx || !pieCtx) return;
+
+    if (barChart) barChart.destroy();
+    if (pieChart) pieChart.destroy();
+
+    barChart = new Chart(barCtx, {
+        type: "bar",
+        data: {
+            labels: ["Receitas", "Despesas"],
+            datasets: [{
+                data: [receitas, despesas],
+                backgroundColor: ["#00ff88", "#ff4d4d"]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    pieChart = new Chart(pieCtx, {
+        type: "pie",
+        data: {
+            labels: Object.keys(categorias),
+            datasets: [{
+                data: Object.values(categorias),
+                backgroundColor: ["#00d4ff", "#00ff88", "#ff4d4d", "#ffcc00", "#a66bff"]
+            }]
+        },
+        options: { responsive: true }
+    });
+}
