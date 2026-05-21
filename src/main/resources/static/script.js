@@ -1,4 +1,4 @@
-const API_URL = "https://controle-financeiro-api-kwcz.onrender.com";
+const API_URL = "";
 let token = "";
 let barChart = null;
 let pieChart = null;
@@ -133,7 +133,6 @@ function drawCharts(receitas, despesas, categorias) {
   const barCtx = document.getElementById("barChart");
   const pieCtx = document.getElementById("pieChart");
 
-  // ✅ Destroi antes de recriar — resolve gráficos sumindo
   if (barChart) { barChart.destroy(); barChart = null; }
   if (pieChart) { pieChart.destroy(); pieChart = null; }
 
@@ -183,7 +182,6 @@ async function addTransaction() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      // ✅ categoryName em vez de category
       body: JSON.stringify({ description: desc, amount, type, categoryName: cat })
     });
 
