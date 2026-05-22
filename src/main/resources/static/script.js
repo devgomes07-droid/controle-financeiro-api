@@ -157,16 +157,17 @@ async function carregar() {
 
     data.forEach(t => {
       const rec = isReceita(t.type);
-      if (rec) receitas += t.amount; else despesas += t.amount;
+      const amt = t.amount ?? 0; // ✅ nunca nulo
+      if (rec) receitas += amt; else despesas += amt;
 
       const cat = t.category ?? "Outros";
-      categorias[cat] = (categorias[cat] || 0) + t.amount;
+      categorias[cat] = (categorias[cat] || 0) + amt;
 
       tbody.innerHTML += `
         <tr>
-          <td>${t.description}</td>
+          <td>${t.description ?? '-'}</td>
           <td class="${rec ? 'td-income' : 'td-expense'}">
-            ${rec ? '+' : '-'} R$ ${t.amount.toFixed(2)}
+            ${rec ? '+' : '-'} R$ ${amt.toFixed(2)}
           </td>
           <td>
             <span class="badge ${rec ? 'badge-income' : 'badge-expense'}">
