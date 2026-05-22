@@ -4,100 +4,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinanceAI</title>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginBox">
     <div class="login-bg">
         <div class="login-orb orb1"></div>
         <div class="login-orb orb2"></div>
         <div class="login-orb orb3"></div>
     </div>
+
     <div class="login-card">
         <div class="login-logo">
             <span class="logo-icon">◈</span>
             <span class="logo-text">Finance<span class="logo-accent">AI</span></span>
         </div>
+
         <p class="login-sub">Controle inteligente do seu dinheiro</p>
+
         <div class="input-group">
             <label>Nome</label>
             <input type="text" id="name" placeholder="Seu nome">
         </div>
+
         <div class="input-group">
             <label>Email</label>
             <input type="email" id="email" placeholder="seu@email.com">
         </div>
+
         <div class="input-group">
             <label>Senha</label>
             <input type="password" id="password" placeholder="••••••••">
         </div>
+
         <button id="loginBtn" onclick="login()">
             <span id="loginBtnText">Entrar</span>
             <span class="btn-arrow">→</span>
         </button>
+
         <p id="loginFeedback"></p>
     </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard" class="hidden">
-
-    <!-- Hamburger mobile -->
     <button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
 
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
             <span class="logo-icon">◈</span>
             <span class="logo-text">Finance<span class="logo-accent">AI</span></span>
         </div>
+
         <nav class="sidebar-nav">
             <a class="nav-item active" href="#">
                 <span class="nav-icon">▦</span> Dashboard
             </a>
+
             <a class="nav-item" href="#" onclick="abrirModal(); return false;">
                 <span class="nav-icon">＋</span> Nova Transação
             </a>
+
+            <a class="nav-item danger-nav" href="#" onclick="resetarTransacoes(); return false;">
+                <span class="nav-icon">⌫</span> Resetar Transações
+            </a>
         </nav>
+
         <div class="sidebar-bottom">
             <div class="user-info" id="sidebarUser"></div>
+
             <button class="logout-btn" onclick="logout()">
                 <span>⏻</span> Sair
             </button>
         </div>
     </aside>
 
-    <!-- Overlay mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- Main -->
     <main class="main-content">
         <header class="dash-header">
             <div>
                 <h1 id="welcomeMsg"></h1>
                 <p class="dash-date" id="dashDate"></p>
             </div>
-            <button class="add-btn" id="openModalBtn" onclick="abrirModal()">
-                <span>＋</span> Adicionar Transação
-            </button>
+
+            <div class="header-actions">
+                <button class="reset-btn" id="resetBtn" onclick="resetarTransacoes()">
+                    <span>⌫</span> Resetar
+                </button>
+
+                <button class="add-btn" id="openModalBtn" onclick="abrirModal()">
+                    <span>＋</span> Adicionar Transação
+                </button>
+            </div>
         </header>
 
-        <!-- Cards de resumo -->
         <div class="summary-grid">
             <div class="summary-card income">
                 <div class="summary-label">Total Receitas</div>
                 <div class="summary-value" id="receitas">R$ 0,00</div>
                 <div class="summary-icon">↑</div>
             </div>
+
             <div class="summary-card expense">
                 <div class="summary-label">Total Despesas</div>
                 <div class="summary-value" id="despesas">R$ 0,00</div>
                 <div class="summary-icon">↓</div>
             </div>
+
             <div class="summary-card balance">
                 <div class="summary-label">Saldo</div>
                 <div class="summary-value" id="saldo">R$ 0,00</div>
@@ -105,23 +123,27 @@
             </div>
         </div>
 
-        <!-- Gráficos -->
         <div class="charts-grid">
             <div class="chart-card">
                 <h3 class="chart-title">Fluxo Financeiro</h3>
-                <canvas id="barChart"></canvas>
+                <div class="bar-chart-wrap">
+                    <canvas id="barChart"></canvas>
+                </div>
             </div>
-            <div class="chart-card">
+
+            <div class="chart-card pie-card">
                 <h3 class="chart-title">Por Categoria</h3>
-                <canvas id="pieChart"></canvas>
+                <div class="pie-chart-wrap">
+                    <canvas id="pieChart"></canvas>
+                </div>
             </div>
         </div>
 
-        <!-- Tabela -->
         <div class="table-card">
             <div class="table-header">
                 <h3 class="chart-title">Transações Recentes</h3>
             </div>
+
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -133,6 +155,7 @@
                         <th>Ações</th>
                     </tr>
                     </thead>
+
                     <tbody id="transactionsBody"></tbody>
                 </table>
             </div>
@@ -140,19 +163,29 @@
     </main>
 </div>
 
-<!-- Modal -->
 <div id="modal" class="modal hidden">
     <div class="modal-content">
         <button class="modal-close" id="closeModalBtn">✕</button>
+
         <h3 class="modal-title">Nova Transação</h3>
+
         <div class="input-group">
             <label>Descrição</label>
-            <input type="text" id="descInput" placeholder="Ex: Salário, Aluguel...">
+            <input
+                    type="text"
+                    id="descInput"
+                    list="descSuggestions"
+                    placeholder="Ex: Mercado, Salário, Aluguel..."
+                    onblur="normalizeDescriptionInput()"
+            >
+            <datalist id="descSuggestions"></datalist>
         </div>
+
         <div class="input-group">
             <label>Valor (R$)</label>
-            <input type="number" id="amountInput" placeholder="0,00" min="0" step="100">
+            <input type="number" id="amountInput" placeholder="0,00" min="0" step="0.01">
         </div>
+
         <div class="input-group">
             <label>Tipo</label>
             <select id="typeInput">
@@ -160,16 +193,19 @@
                 <option value="DESPESA">Despesa</option>
             </select>
         </div>
+
         <div class="input-group">
             <label>Categoria</label>
-            <select id="catInput"><option value="">Selecione uma categoria</option></select>
+            <select id="catInput">
+                <option value="">Selecione uma categoria</option>
+            </select>
         </div>
+
         <button class="save-btn" onclick="addTransaction()">Salvar Transação</button>
         <p id="modalFeedback"></p>
     </div>
 </div>
 
-<!-- Loading -->
 <div id="loading" class="loading hidden">
     <div class="loading-inner">
         <div class="loading-spinner"></div>
