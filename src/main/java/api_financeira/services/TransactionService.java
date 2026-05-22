@@ -4,7 +4,6 @@ import api_financeira.dto.TransactionRequestDTO;
 import api_financeira.dto.TransactionResponseDTO;
 import api_financeira.entities.Category;
 import api_financeira.entities.Transaction;
-import api_financeira.repositories.CategoryRepository;
 import api_financeira.repositories.TransactionRepository;
 import api_financeira.services.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,9 +20,8 @@ public class TransactionService {
     private TransactionRepository repository;
 
     @Autowired
-    private CategoryRepository categoryRepository;
+    private CategoryService categoryService;
 
-    // LISTAR TODOS
     public List<TransactionResponseDTO> findAll() {
         return repository.findAll()
                 .stream()
@@ -31,7 +29,6 @@ public class TransactionService {
                 .toList();
     }
 
-    // BUSCAR POR ID
     public TransactionResponseDTO findById(Long id) {
         Transaction entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
@@ -39,20 +36,17 @@ public class TransactionService {
         return toResponseDTO(entity);
     }
 
-    // INSERT
     public TransactionResponseDTO insert(TransactionRequestDTO dto) {
+        validateTransaction(dto);
 
         Transaction entity = new Transaction();
 
-        entity.setDescription(dto.getDescription());
+        entity.setDescription(normalizeText(dto.getDescription()));
         entity.setAmount(dto.getAmount());
         entity.setType(dto.getType());
         entity.setDate(Instant.now());
 
-        // ✅ Busca categoria pelo nome agora
-        Category category = categoryRepository.findByNameIgnoreCase(dto.getCategoryName())
-                .orElseThrow(() -> new ResourceNotFoundException(0L));
-
+        Category category = categoryService.findOrCreateByName(dto.getCategoryName());
         entity.setCategory(category);
 
         entity = repository.save(entity);
@@ -60,19 +54,17 @@ public class TransactionService {
         return toResponseDTO(entity);
     }
 
-    // UPDATE
     public TransactionResponseDTO update(Long id, TransactionRequestDTO dto) {
         try {
+            validateTransaction(dto);
+
             Transaction entity = repository.getReferenceById(id);
 
-            entity.setDescription(dto.getDescription());
+            entity.setDescription(normalizeText(dto.getDescription()));
             entity.setAmount(dto.getAmount());
             entity.setType(dto.getType());
 
-            // ✅ Busca categoria pelo nome no update também
-            Category category = categoryRepository.findByNameIgnoreCase(dto.getCategoryName())
-                    .orElseThrow(() -> new ResourceNotFoundException(0L));
-
+            Category category = categoryService.findOrCreateByName(dto.getCategoryName());
             entity.setCategory(category);
 
             entity = repository.save(entity);
@@ -84,7 +76,6 @@ public class TransactionService {
         }
     }
 
-    // DELETE
     public void delete(Long id) {
         try {
             repository.deleteById(id);
@@ -93,9 +84,29 @@ public class TransactionService {
         }
     }
 
-    // DTO MAPPER
-    private TransactionResponseDTO toResponseDTO(Transaction entity) {
+    private void validateTransaction(TransactionRequestDTO dto) {
+        if (dto.getDescription() == null || dto.getDescription().trim().isBlank()) {
+            throw new IllegalArgumentException("Descrição não pode ser vazia.");
+        }
 
+        if (dto.getAmount() == null || dto.getAmount() <= 0) {
+            throw new IllegalArgumentException("Valor deve ser maior que zero.");
+        }
+
+        if (dto.getType() == null || dto.getType().trim().isBlank()) {
+            throw new IllegalArgumentException("Tipo não pode ser vazio.");
+        }
+
+        if (dto.getCategoryName() == null || dto.getCategoryName().trim().isBlank()) {
+            throw new IllegalArgumentException("Categoria não pode ser vazia.");
+        }
+    }
+
+    private String normalizeText(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", " ");
+    }
+
+    private TransactionResponseDTO toResponseDTO(Transaction entity) {
         return new TransactionResponseDTO(
                 entity.getId(),
                 entity.getDescription(),
