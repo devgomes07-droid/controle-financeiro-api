@@ -63,6 +63,7 @@ async function login() {
     document.getElementById("welcomeMsg").innerText = `👋 Olá, ${nomeExibido}! Bem-vindo ao seu painel financeiro.`;
 
     document.getElementById("openModalBtn").onclick = () => {
+      carregarCategorias();
       document.getElementById("modal").classList.remove("hidden");
     };
     document.getElementById("closeModalBtn").onclick = () => {
@@ -76,6 +77,25 @@ async function login() {
     btn.innerText = "Entrar";
     btn.disabled = false;
     showLoading(false);
+  }
+}
+
+// ✅ Carrega categorias do banco e popula o select
+async function carregarCategorias() {
+  try {
+    const res = await fetch(`${API_URL}/categories`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const categorias = await res.json();
+
+    const select = document.getElementById("catInput");
+    select.innerHTML = '<option value="">Selecione uma categoria</option>';
+
+    categorias.forEach(cat => {
+      select.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+    });
+  } catch {
+    showModalFeedback("Erro ao carregar categorias.", "error");
   }
 }
 
@@ -108,7 +128,6 @@ async function carregar() {
       const isReceita = type === "INCOME" || type === "RECEITA";
       if (isReceita) receitas += t.amount; else despesas += t.amount;
 
-      // ✅ category agora é String direta, não objeto
       const cat = t.category ?? "Outros";
       categorias[cat] = (categorias[cat] || 0) + t.amount;
 
@@ -134,7 +153,6 @@ async function carregar() {
   }
 }
 
-// ✅ Função de deletar transação
 async function deletar(id) {
   if (!confirm("Tem certeza que quer deletar essa transação?")) return;
 
