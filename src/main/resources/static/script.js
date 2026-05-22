@@ -5,6 +5,57 @@ let barChart = null;
 let pieChart = null;
 let transactionsCache = [];
 
+const descriptionRules = {
+  "Salário": { type: "RECEITA", category: "Salário" },
+  "Freelance": { type: "RECEITA", category: "Freelance" },
+  "Rendimento": { type: "RECEITA", category: "Investimento" },
+  "Dividendos": { type: "RECEITA", category: "Investimento" },
+
+  "Mercado": { type: "DESPESA", category: "Alimentação" },
+  "Almoço": { type: "DESPESA", category: "Alimentação" },
+  "Jantar": { type: "DESPESA", category: "Alimentação" },
+  "Lanche": { type: "DESPESA", category: "Alimentação" },
+  "Padaria": { type: "DESPESA", category: "Alimentação" },
+
+  "Uber": { type: "DESPESA", category: "Transporte" },
+  "Ônibus": { type: "DESPESA", category: "Transporte" },
+  "Combustível": { type: "DESPESA", category: "Transporte" },
+  "Estacionamento": { type: "DESPESA", category: "Transporte" },
+
+  "Academia": { type: "DESPESA", category: "Saúde" },
+  "Farmácia": { type: "DESPESA", category: "Saúde" },
+  "Consulta": { type: "DESPESA", category: "Saúde" },
+
+  "Aluguel": { type: "DESPESA", category: "Moradia" },
+  "Condomínio": { type: "DESPESA", category: "Moradia" },
+  "Energia": { type: "DESPESA", category: "Moradia" },
+  "Internet": { type: "DESPESA", category: "Moradia" },
+
+  "Cinema": { type: "DESPESA", category: "Lazer" },
+  "Streaming": { type: "DESPESA", category: "Lazer" },
+  "Viagem": { type: "DESPESA", category: "Lazer" },
+
+  "Curso": { type: "DESPESA", category: "Educação" },
+  "Faculdade": { type: "DESPESA", category: "Educação" },
+  "Livro": { type: "DESPESA", category: "Educação" },
+
+  "Roupa": { type: "DESPESA", category: "Vestuário" },
+  "Tênis": { type: "DESPESA", category: "Vestuário" }
+};
+
+const defaultCategories = [
+  "Alimentação",
+  "Transporte",
+  "Saúde",
+  "Lazer",
+  "Educação",
+  "Moradia",
+  "Investimento",
+  "Vestuário",
+  "Salário",
+  "Freelance"
+];
+
 const chartColors = [
   "#00f5a0",
   "#ff4d6d",
@@ -36,10 +87,9 @@ window.onload = () => {
     });
   }
 
-  const closeModalBtn = document.getElementById("closeModalBtn");
-  if (closeModalBtn) {
-    closeModalBtn.onclick = fecharModal;
-  }
+  document.getElementById("closeModalBtn").onclick = fecharModal;
+  atualizarSugestoesDescricao();
+  preencherCategorias(defaultCategories);
 };
 
 function toggleSidebar() {
@@ -56,8 +106,13 @@ function abrirModal() {
   fecharSidebarMobile();
   carregarCategorias();
   atualizarSugestoesDescricao();
-  document.getElementById("modal").classList.remove("hidden");
+
+  document.getElementById("descInput").value = "";
+  document.getElementById("amountInput").value = "";
+  document.getElementById("typeInput").value = "DESPESA";
+  document.getElementById("catInput").value = "";
   document.getElementById("modalFeedback").innerText = "";
+  document.getElementById("modal").classList.remove("hidden");
 }
 
 function fecharModal() {
@@ -80,28 +135,6 @@ function showLoading(show) {
   document.getElementById("loading").classList.toggle("hidden", !show);
 }
 
-function formatMoney(value) {
-  const safeValue = Number.isFinite(value) ? value : 0;
-
-  return safeValue.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
-
-function safeAmount(value) {
-  if (value === null || value === undefined || value === "") return 0;
-
-  if (typeof value === "string") {
-    const normalized = value.replace(",", ".");
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -111,7 +144,22 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function removerAcentos(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function normalizarChave(value) {
+  return removerAcentos(value).trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 function padronizarDescricao(value) {
+  const key = normalizarChave(value);
+  const found = Object.keys(descriptionRules).find(desc => normalizarChave(desc) === key);
+
+  if (found) return found;
+
   return String(value ?? "")
     .trim()
     .replace(/\s+/g, " ")
@@ -119,22 +167,80 @@ function padronizarDescricao(value) {
     .replace(/(^|\s|[-/])(\p{L})/gu, (match, sep, letter) => sep + letter.toUpperCase());
 }
 
-function normalizeDescriptionInput() {
-  const input = document.getElementById("descInput");
-  input.value = padronizarDescricao(input.value);
+function getDescriptionRule(description) {
+  const key = normalizarChave(description);
+  const found = Object.keys(descriptionRules).find(desc => normalizarChave(desc) === key);
+  return found ? { description: found, ...descriptionRules[found] } : null;
+}
+
+function safeAmount(value) {
+  if (value === null || value === undefined || value === "") return 0;
+
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatMoney(value) {
+  return safeAmount(value).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
+function isReceita(type) {
+  const t = String(type ?? "").toUpperCase().trim();
+  return t === "RECEITA" || t === "INCOME" || t === "R" || t === "ENTRADA";
+}
+
+function preencherCategorias(categories) {
+  const select = document.getElementById("catInput");
+  const merged = [...new Set([...defaultCategories, ...categories].filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  select.innerHTML = '<option value="">Selecione uma categoria</option>';
+
+  merged.forEach(category => {
+    select.innerHTML += `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`;
+  });
 }
 
 function atualizarSugestoesDescricao() {
   const datalist = document.getElementById("descSuggestions");
-  const descricoes = [...new Set(
-    transactionsCache
-      .map(t => padronizarDescricao(t.description))
-      .filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const defaults = Object.keys(descriptionRules);
 
-  datalist.innerHTML = descricoes
+  const fromTransactions = transactionsCache
+    .map(t => padronizarDescricao(t.description))
+    .filter(desc => getDescriptionRule(desc));
+
+  const descriptions = [...new Set([...defaults, ...fromTransactions])]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  datalist.innerHTML = descriptions
     .map(desc => `<option value="${escapeHtml(desc)}"></option>`)
     .join("");
+}
+
+function aplicarRegraDescricao(forceNormalize = false) {
+  const descInput = document.getElementById("descInput");
+  const typeInput = document.getElementById("typeInput");
+  const catInput = document.getElementById("catInput");
+
+  const normalized = padronizarDescricao(descInput.value);
+  const rule = getDescriptionRule(normalized);
+
+  if (forceNormalize) descInput.value = normalized;
+
+  if (!rule) return;
+
+  descInput.value = rule.description;
+  typeInput.value = rule.type;
+  catInput.value = rule.category;
+  showModalFeedback("", "");
 }
 
 async function login() {
@@ -175,7 +281,7 @@ async function login() {
     document.getElementById("sidebarUser").innerText = nomeExibido;
 
     await carregar();
-  } catch (err) {
+  } catch {
     showLoginFeedback("Erro de conexão. Tente novamente.", "error");
   } finally {
     document.getElementById("loginBtnText").innerText = "Entrar";
@@ -191,18 +297,13 @@ async function carregarCategorias() {
     });
 
     const categorias = await res.json();
-    const select = document.getElementById("catInput");
+    const apiCategories = Array.isArray(categorias)
+      ? categorias.map(cat => cat.name).filter(Boolean)
+      : [];
 
-    select.innerHTML = '<option value="">Selecione uma categoria</option>';
-
-    if (Array.isArray(categorias)) {
-      categorias.forEach(cat => {
-        const name = escapeHtml(cat.name);
-        select.innerHTML += `<option value="${name}">${name}</option>`;
-      });
-    }
+    preencherCategorias(apiCategories);
   } catch {
-    showModalFeedback("Erro ao carregar categorias.", "error");
+    preencherCategorias(defaultCategories);
   }
 }
 
@@ -218,11 +319,8 @@ function logout() {
   document.getElementById("name").value = "";
   document.getElementById("email").value = "";
   document.getElementById("password").value = "";
-}
 
-function isReceita(type) {
-  const t = String(type ?? "").toUpperCase().trim();
-  return t === "RECEITA" || t === "INCOME" || t === "R" || t === "ENTRADA";
+  atualizarSugestoesDescricao();
 }
 
 async function carregar() {
@@ -236,7 +334,27 @@ async function carregar() {
     if (!res.ok) throw new Error("Erro ao buscar transações");
 
     const data = await res.json();
-    transactionsCache = Array.isArray(data) ? data : [];
+    const rawTransactions = Array.isArray(data) ? data : [];
+
+    const uniqueMap = new Map();
+
+    rawTransactions.forEach(t => {
+      const desc = padronizarDescricao(t.description);
+      const amount = safeAmount(t.amount);
+      const type = isReceita(t.type) ? "RECEITA" : "DESPESA";
+      const category = t.category ?? t.categoryName ?? "Outros";
+      const key = `${desc}|${amount}|${type}|${category}|${t.id}`;
+
+      uniqueMap.set(key, {
+        ...t,
+        description: desc,
+        amount,
+        type,
+        category
+      });
+    });
+
+    transactionsCache = [...uniqueMap.values()];
 
     let receitas = 0;
     let despesas = 0;
@@ -248,9 +366,7 @@ async function carregar() {
     if (transactionsCache.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" class="empty-table">
-            Nenhuma transação encontrada.
-          </td>
+          <td colspan="5" class="empty-table">Nenhuma transação encontrada.</td>
         </tr>
       `;
 
@@ -266,13 +382,15 @@ async function carregar() {
     transactionsCache.forEach(t => {
       const rec = isReceita(t.type);
       const amt = safeAmount(t.amount);
-      const cat = t.category ?? t.categoryName ?? "Outros";
+      const cat = t.category ?? "Outros";
       const desc = padronizarDescricao(t.description) || "-";
 
       if (rec) receitas += amt;
       else despesas += amt;
 
-      categorias[cat] = (categorias[cat] || 0) + amt;
+      if (!rec) {
+        categorias[cat] = (categorias[cat] || 0) + amt;
+      }
 
       tbody.innerHTML += `
         <tr>
@@ -360,13 +478,11 @@ async function resetarTransacoes() {
     const results = await Promise.all(deletes);
     const falhou = results.some(res => !res.ok);
 
-    if (falhou) {
-      alert("Algumas transações não puderam ser deletadas.");
-    }
+    if (falhou) alert("Algumas transações não puderam ser deletadas.");
 
     await carregar();
-  } catch (e) {
-    console.error(e);
+    atualizarSugestoesDescricao();
+  } catch {
     alert("Erro ao resetar transações.");
   } finally {
     showLoading(false);
@@ -374,57 +490,63 @@ async function resetarTransacoes() {
 }
 
 function drawCharts(receitas, despesas, categorias) {
-  const barCtx = document.getElementById("barChart");
-  const pieCtx = document.getElementById("pieChart");
+  const barCanvas = document.getElementById("barChart");
+  const pieCanvas = document.getElementById("pieChart");
 
-  if (barChart) {
-    barChart.destroy();
-    barChart = null;
-  }
+  if (barChart) barChart.destroy();
+  if (pieChart) pieChart.destroy();
 
-  if (pieChart) {
-    pieChart.destroy();
-    pieChart = null;
-  }
-
-  Chart.defaults.color = "#8d93a5";
+  Chart.defaults.color = "#a4aabb";
   Chart.defaults.font.family = "DM Sans, sans-serif";
 
-  barChart = new Chart(barCtx, {
+  const barGradientIncome = barCanvas.getContext("2d").createLinearGradient(0, 0, 0, 260);
+  barGradientIncome.addColorStop(0, "rgba(0,245,160,0.9)");
+  barGradientIncome.addColorStop(1, "rgba(0,245,160,0.22)");
+
+  const barGradientExpense = barCanvas.getContext("2d").createLinearGradient(0, 0, 0, 260);
+  barGradientExpense.addColorStop(0, "rgba(255,77,109,0.9)");
+  barGradientExpense.addColorStop(1, "rgba(255,77,109,0.22)");
+
+  barChart = new Chart(barCanvas, {
     type: "bar",
     data: {
       labels: ["Receitas", "Despesas"],
       datasets: [{
         data: [receitas, despesas],
-        backgroundColor: ["rgba(0,245,160,0.72)", "rgba(255,77,109,0.72)"],
+        backgroundColor: [barGradientIncome, barGradientExpense],
         borderColor: ["#00f5a0", "#ff4d6d"],
         borderWidth: 2,
-        borderRadius: 10,
-        maxBarThickness: 72
+        borderRadius: 14,
+        maxBarThickness: 82
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 700 },
       plugins: {
         legend: { display: false },
         tooltip: {
+          backgroundColor: "#171a22",
+          borderColor: "rgba(255,255,255,0.1)",
+          borderWidth: 1,
+          padding: 12,
           callbacks: {
-            label: context => formatMoney(safeAmount(context.raw))
+            label: context => formatMoney(context.raw)
           }
         }
       },
       scales: {
         x: {
           grid: { display: false },
-          ticks: { color: "#8d93a5", font: { size: 12, weight: "600" } }
+          ticks: { color: "#a4aabb", font: { size: 13, weight: "700" } }
         },
         y: {
           beginAtZero: true,
-          grid: { color: "rgba(255,255,255,0.05)" },
+          grid: { color: "rgba(255,255,255,0.06)" },
           ticks: {
             color: "#8d93a5",
-            callback: value => formatMoney(safeAmount(value))
+            callback: value => formatMoney(value)
           }
         }
       }
@@ -434,9 +556,31 @@ function drawCharts(receitas, despesas, categorias) {
   const labels = Object.keys(categorias);
   const values = Object.values(categorias).map(safeAmount);
 
-  if (labels.length === 0) return;
+  if (labels.length === 0) {
+    pieChart = new Chart(pieCanvas, {
+      type: "doughnut",
+      data: {
+        labels: ["Sem despesas"],
+        datasets: [{
+          data: [1],
+          backgroundColor: ["rgba(255,255,255,0.08)"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "72%",
+        plugins: {
+          tooltip: { enabled: false },
+          legend: { display: false }
+        }
+      }
+    });
+    return;
+  }
 
-  pieChart = new Chart(pieCtx, {
+  pieChart = new Chart(pieCanvas, {
     type: "doughnut",
     data: {
       labels,
@@ -444,24 +588,29 @@ function drawCharts(receitas, despesas, categorias) {
         data: values,
         backgroundColor: labels.map((_, index) => chartColors[index % chartColors.length]),
         borderColor: "#111318",
-        borderWidth: 3,
-        hoverOffset: 8
+        borderWidth: 4,
+        hoverOffset: 10
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: "68%",
+      cutout: "70%",
+      animation: { duration: 700 },
       plugins: {
         tooltip: {
+          backgroundColor: "#171a22",
+          borderColor: "rgba(255,255,255,0.1)",
+          borderWidth: 1,
+          padding: 12,
           callbacks: {
-            label: context => `${context.label}: ${formatMoney(safeAmount(context.raw))}`
+            label: context => `${context.label}: ${formatMoney(context.raw)}`
           }
         },
         legend: {
           position: "bottom",
           labels: {
-            color: "#a4aabb",
+            color: "#b7bdcc",
             padding: 18,
             usePointStyle: true,
             pointStyle: "circle",
@@ -469,7 +618,7 @@ function drawCharts(receitas, despesas, categorias) {
             boxHeight: 10,
             font: {
               size: 13,
-              weight: "600"
+              weight: "700"
             }
           }
         }
@@ -479,17 +628,24 @@ function drawCharts(receitas, despesas, categorias) {
 }
 
 async function addTransaction() {
-  const desc = padronizarDescricao(document.getElementById("descInput").value);
+  const rawDesc = document.getElementById("descInput").value;
+  const desc = padronizarDescricao(rawDesc);
   const amount = safeAmount(document.getElementById("amountInput").value);
-  const type = document.getElementById("typeInput").value;
-  const cat = document.getElementById("catInput").value.trim();
+  const rule = getDescriptionRule(desc);
 
-  document.getElementById("descInput").value = desc;
-
-  if (!desc || amount <= 0 || !cat) {
-    showModalFeedback("Preencha todos os campos corretamente.", "error");
+  if (!rule) {
+    showModalFeedback("Escolha uma descrição válida da lista.", "error");
     return;
   }
+
+  if (amount <= 0) {
+    showModalFeedback("Informe um valor maior que zero.", "error");
+    return;
+  }
+
+  document.getElementById("descInput").value = rule.description;
+  document.getElementById("typeInput").value = rule.type;
+  document.getElementById("catInput").value = rule.category;
 
   showLoading(true);
 
@@ -501,10 +657,10 @@ async function addTransaction() {
         "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({
-        description: desc,
+        description: rule.description,
         amount,
-        type,
-        categoryName: cat
+        type: rule.type,
+        categoryName: rule.category
       })
     });
 
@@ -517,14 +673,10 @@ async function addTransaction() {
 
     showModalFeedback("Transação salva!", "success");
 
-    document.getElementById("descInput").value = "";
-    document.getElementById("amountInput").value = "";
-
     setTimeout(() => {
       fecharModal();
-      document.getElementById("modalFeedback").innerText = "";
       carregar();
-    }, 900);
+    }, 800);
   } catch (e) {
     console.error(e);
     showModalFeedback("Erro de conexão.", "error");

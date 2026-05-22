@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinanceAI</title>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -68,15 +66,10 @@
             <a class="nav-item" href="#" onclick="abrirModal(); return false;">
                 <span class="nav-icon">＋</span> Nova Transação
             </a>
-
-            <a class="nav-item danger-nav" href="#" onclick="resetarTransacoes(); return false;">
-                <span class="nav-icon">⌫</span> Resetar Transações
-            </a>
         </nav>
 
         <div class="sidebar-bottom">
             <div class="user-info" id="sidebarUser"></div>
-
             <button class="logout-btn" onclick="logout()">
                 <span>⏻</span> Sair
             </button>
@@ -92,15 +85,9 @@
                 <p class="dash-date" id="dashDate"></p>
             </div>
 
-            <div class="header-actions">
-                <button class="reset-btn" id="resetBtn" onclick="resetarTransacoes()">
-                    <span>⌫</span> Resetar
-                </button>
-
-                <button class="add-btn" id="openModalBtn" onclick="abrirModal()">
-                    <span>＋</span> Adicionar Transação
-                </button>
-            </div>
+            <button class="add-btn" id="openModalBtn" onclick="abrirModal()">
+                <span>＋</span> Adicionar Transação
+            </button>
         </header>
 
         <div class="summary-grid">
@@ -125,14 +112,14 @@
 
         <div class="charts-grid">
             <div class="chart-card">
-                <h3 class="chart-title">Fluxo Financeiro</h3>
+                <h3 class="chart-title">Receitas x Despesas</h3>
                 <div class="bar-chart-wrap">
                     <canvas id="barChart"></canvas>
                 </div>
             </div>
 
             <div class="chart-card pie-card">
-                <h3 class="chart-title">Por Categoria</h3>
+                <h3 class="chart-title">Gastos por Categoria</h3>
                 <div class="pie-chart-wrap">
                     <canvas id="pieChart"></canvas>
                 </div>
@@ -142,6 +129,9 @@
         <div class="table-card">
             <div class="table-header">
                 <h3 class="chart-title">Transações Recentes</h3>
+                <button class="reset-inline-btn" onclick="resetarTransacoes()">
+                    Resetar transações
+                </button>
             </div>
 
             <div class="table-wrapper">
@@ -155,7 +145,6 @@
                         <th>Ações</th>
                     </tr>
                     </thead>
-
                     <tbody id="transactionsBody"></tbody>
                 </table>
             </div>
@@ -175,15 +164,16 @@
                     type="text"
                     id="descInput"
                     list="descSuggestions"
-                    placeholder="Ex: Mercado, Salário, Aluguel..."
-                    onblur="normalizeDescriptionInput()"
+                    placeholder="Selecione uma descrição"
+                    oninput="aplicarRegraDescricao()"
+                    onblur="aplicarRegraDescricao(true)"
             >
             <datalist id="descSuggestions"></datalist>
         </div>
 
         <div class="input-group">
             <label>Valor (R$)</label>
-            <input type="number" id="amountInput" placeholder="0,00" min="0" step="0.01">
+            <input type="number" id="amountInput" placeholder="0,00" min="0" step="100">
         </div>
 
         <div class="input-group">
