@@ -8,18 +8,25 @@ window.onload = () => {
   document.getElementById("dashboard").classList.add("hidden");
   document.getElementById("modal").classList.add("hidden");
   document.getElementById("loading").classList.add("hidden");
+
+  // Data no header
+  const now = new Date();
+  const dashDate = document.getElementById("dashDate");
+  if (dashDate) {
+    dashDate.innerText = now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  }
 };
 
 function showLoginFeedback(msg, type) {
-  const feedback = document.getElementById("loginFeedback");
-  feedback.innerText = msg;
-  feedback.className = type;
+  const el = document.getElementById("loginFeedback");
+  el.innerText = msg;
+  el.className = type;
 }
 
 function showModalFeedback(msg, type) {
-  const feedback = document.getElementById("modalFeedback");
-  feedback.innerText = msg;
-  feedback.className = type;
+  const el = document.getElementById("modalFeedback");
+  el.innerText = msg;
+  el.className = type;
 }
 
 function showLoading(show) {
@@ -37,7 +44,7 @@ async function login() {
   }
 
   const btn = document.getElementById("loginBtn");
-  btn.innerText = "Entrando...";
+  btn.querySelector("span").innerText = "Entrando...";
   btn.disabled = true;
   showLoading(true);
 
@@ -60,7 +67,8 @@ async function login() {
 
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
-    document.getElementById("welcomeMsg").innerText = `👋 Olá, ${nomeExibido}! Bem-vindo ao seu painel financeiro.`;
+    document.getElementById("welcomeMsg").innerText = `Olá, ${nomeExibido} 👋`;
+    document.getElementById("sidebarUser").innerText = nomeExibido;
 
     document.getElementById("openModalBtn").onclick = () => {
       carregarCategorias();
@@ -74,23 +82,20 @@ async function login() {
   } catch (err) {
     showLoginFeedback("Erro de conexão. Tente novamente.", "error");
   } finally {
-    btn.innerText = "Entrar";
+    btn.querySelector("span").innerText = "Entrar";
     btn.disabled = false;
     showLoading(false);
   }
 }
 
-// ✅ Carrega categorias do banco e popula o select
 async function carregarCategorias() {
   try {
     const res = await fetch(`${API_URL}/categories`, {
       headers: { "Authorization": `Bearer ${token}` }
     });
     const categorias = await res.json();
-
     const select = document.getElementById("catInput");
     select.innerHTML = '<option value="">Selecione uma categoria</option>';
-
     categorias.forEach(cat => {
       select.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
     });
@@ -134,17 +139,26 @@ async function carregar() {
       tbody.innerHTML += `
         <tr>
           <td>${t.description}</td>
-          <td ${isReceita ? "style='color:green'" : "style='color:red'"}>R$ ${t.amount.toFixed(2)}</td>
-          <td>${isReceita ? "Receita" : "Despesa"}</td>
+          <td class="${isReceita ? 'td-income' : 'td-expense'}">
+            ${isReceita ? '+' : '-'} R$ ${t.amount.toFixed(2)}
+          </td>
+          <td>
+            <span class="badge ${isReceita ? 'badge-income' : 'badge-expense'}">
+              ${isReceita ? 'Receita' : 'Despesa'}
+            </span>
+          </td>
           <td>${cat}</td>
           <td>
-            <button onclick="deletar(${t.id})" style="background:#ff4d4d;color:#fff;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑 Deletar</button>
+            <button class="del-btn" onclick="deletar(${t.id})">🗑 Deletar</button>
           </td>
         </tr>`;
     });
 
+    const saldo = receitas - despesas;
     document.getElementById("receitas").innerText = "R$ " + receitas.toFixed(2);
     document.getElementById("despesas").innerText = "R$ " + despesas.toFixed(2);
+    document.getElementById("saldo").innerText = (saldo >= 0 ? "R$ " : "- R$ ") + Math.abs(saldo).toFixed(2);
+
     drawCharts(receitas, despesas, categorias);
   } catch {
     showLoginFeedback("Erro ao carregar dados.", "error");
@@ -155,19 +169,13 @@ async function carregar() {
 
 async function deletar(id) {
   if (!confirm("Tem certeza que quer deletar essa transação?")) return;
-
   showLoading(true);
   try {
     const res = await fetch(`${API_URL}/transactions/${id}`, {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${token}` }
     });
-
-    if (!res.ok) {
-      alert("Erro ao deletar transação.");
-      return;
-    }
-
+    if (!res.ok) { alert("Erro ao deletar."); return; }
     carregar();
   } catch {
     alert("Erro de conexão.");
@@ -183,27 +191,53 @@ function drawCharts(receitas, despesas, categorias) {
   if (barChart) { barChart.destroy(); barChart = null; }
   if (pieChart) { pieChart.destroy(); pieChart = null; }
 
+  Chart.defaults.color = "#7b8091";
+  Chart.defaults.font.family = "DM Sans";
+
   barChart = new Chart(barCtx, {
     type: "bar",
     data: {
       labels: ["Receitas", "Despesas"],
-      datasets: [{ data: [receitas, despesas], backgroundColor: ["#00ff88", "#ff4d4d"] }]
+      datasets: [{
+        data: [receitas, despesas],
+        backgroundColor: ["rgba(0,245,160,0.7)", "rgba(255,77,109,0.7)"],
+        borderColor: ["#00f5a0", "#ff4d6d"],
+        borderWidth: 2,
+        borderRadius: 8,
+      }]
     },
-    options: { plugins: { legend: { display: false } } }
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#7b8091" } },
+        y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#7b8091" } }
+      }
+    }
   });
 
-  const labelsCategoria = Object.keys(categorias);
-  const valoresCategoria = Object.values(categorias);
+  const labels = Object.keys(categorias);
+  const values = Object.values(categorias);
 
-  if (labelsCategoria.length > 0) {
+  if (labels.length > 0) {
     pieChart = new Chart(pieCtx, {
-      type: "pie",
+      type: "doughnut",
       data: {
-        labels: labelsCategoria,
+        labels,
         datasets: [{
-          data: valoresCategoria,
-          backgroundColor: ["#00d4ff", "#00ff88", "#ff4d4d", "#ffcc00", "#a66bff"]
+          data: values,
+          backgroundColor: ["#00f5a0","#00d4ff","#ff4d6d","#ffd166","#a855f7","#06d6a0"],
+          borderWidth: 0,
+          hoverOffset: 8
         }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { color: "#7b8091", padding: 16, usePointStyle: true }
+          }
+        },
+        cutout: "65%"
       }
     });
   }
@@ -237,17 +271,16 @@ async function addTransaction() {
       return;
     }
 
-    showModalFeedback("Transação salva com sucesso!", "success");
+    showModalFeedback("Transação salva! ✓", "success");
     document.getElementById("descInput").value = "";
     document.getElementById("amountInput").value = "";
-    document.getElementById("catInput").value = "";
 
     setTimeout(() => {
       document.getElementById("modal").classList.add("hidden");
       document.getElementById("modalFeedback").innerText = "";
-    }, 1500);
+      carregar();
+    }, 1200);
 
-    carregar();
   } catch {
     showModalFeedback("Erro de conexão.", "error");
   } finally {

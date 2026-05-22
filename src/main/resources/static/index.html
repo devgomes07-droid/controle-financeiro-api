@@ -3,91 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Financeiro</title>
+    <title>FinanceAI</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app">
 
-    <!-- LOGIN -->
-    <section id="loginBox" class="login-card">
-        <h1>💰 Finance AI</h1>
-        <p>Entre na sua conta</p>
-        <input type="text" id="name" placeholder="Nome">
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Senha">
-        <button id="loginBtn" onclick="login()">Entrar</button>
+<!-- LOGIN -->
+<div id="loginBox">
+    <div class="login-bg">
+        <div class="login-orb orb1"></div>
+        <div class="login-orb orb2"></div>
+        <div class="login-orb orb3"></div>
+    </div>
+    <div class="login-card">
+        <div class="login-logo">
+            <span class="logo-icon">◈</span>
+            <span class="logo-text">Finance<span class="logo-accent">AI</span></span>
+        </div>
+        <p class="login-sub">Controle inteligente do seu dinheiro</p>
+        <div class="input-group">
+            <label>Nome</label>
+            <input type="text" id="name" placeholder="Seu nome">
+        </div>
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="seu@email.com">
+        </div>
+        <div class="input-group">
+            <label>Senha</label>
+            <input type="password" id="password" placeholder="••••••••">
+        </div>
+        <button id="loginBtn" onclick="login()">
+            <span>Entrar</span>
+            <span class="btn-arrow">→</span>
+        </button>
         <p id="loginFeedback"></p>
-    </section>
+    </div>
+</div>
 
-    <!-- DASHBOARD -->
-    <section id="dashboard" class="dashboard hidden">
-        <h2 id="welcomeMsg"></h2>
+<!-- DASHBOARD -->
+<div id="dashboard" class="hidden">
 
-        <div class="top">
-            <div class="card">
-                <h3>Receitas</h3>
-                <p id="receitas">R$ 0</p>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <span class="logo-icon">◈</span>
+            <span class="logo-text">Finance<span class="logo-accent">AI</span></span>
+        </div>
+        <nav class="sidebar-nav">
+            <a class="nav-item active" href="#">
+                <span class="nav-icon">▦</span> Dashboard
+            </a>
+            <a class="nav-item" href="#" onclick="document.getElementById('openModalBtn').click(); return false;">
+                <span class="nav-icon">＋</span> Nova Transação
+            </a>
+        </nav>
+        <div class="sidebar-bottom">
+            <div class="user-info" id="sidebarUser"></div>
+            <button class="logout-btn" onclick="logout()">
+                <span>⏻</span> Sair
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+        <header class="dash-header">
+            <div>
+                <h1 id="welcomeMsg"></h1>
+                <p class="dash-date" id="dashDate"></p>
             </div>
-            <div class="card">
-                <h3>Despesas</h3>
-                <p id="despesas">R$ 0</p>
+            <button class="add-btn" id="openModalBtn">
+                <span>＋</span> Adicionar Transação
+            </button>
+        </header>
+
+        <!-- Cards de resumo -->
+        <div class="summary-grid">
+            <div class="summary-card income">
+                <div class="summary-label">Total Receitas</div>
+                <div class="summary-value" id="receitas">R$ 0,00</div>
+                <div class="summary-icon">↑</div>
+            </div>
+            <div class="summary-card expense">
+                <div class="summary-label">Total Despesas</div>
+                <div class="summary-value" id="despesas">R$ 0,00</div>
+                <div class="summary-icon">↓</div>
+            </div>
+            <div class="summary-card balance">
+                <div class="summary-label">Saldo</div>
+                <div class="summary-value" id="saldo">R$ 0,00</div>
+                <div class="summary-icon">◈</div>
             </div>
         </div>
 
-        <div class="charts">
-            <div class="card">
-                <h3>Fluxo Financeiro</h3>
+        <!-- Gráficos -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-title">Fluxo Financeiro</h3>
                 <canvas id="barChart"></canvas>
             </div>
-            <div class="card">
-                <h3>Categorias</h3>
+            <div class="chart-card">
+                <h3 class="chart-title">Por Categoria</h3>
                 <canvas id="pieChart"></canvas>
             </div>
         </div>
 
-        <div class="card table">
-            <h3>Transações</h3>
-            <table>
-                <thead>
-                <tr>
-                    <th>Descrição</th>
-                    <th>Valor</th>
-                    <th>Tipo</th>
-                    <th>Categoria</th>
-                    <th>Ações</th>
-                </tr>
-                </thead>
-                <tbody id="transactionsBody"></tbody>
-            </table>
+        <!-- Tabela -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3 class="chart-title">Transações Recentes</h3>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Tipo</th>
+                        <th>Categoria</th>
+                        <th>Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody id="transactionsBody"></tbody>
+                </table>
+            </div>
         </div>
-
-        <button id="openModalBtn">➕ Adicionar Transação</button>
-        <button id="logoutBtn" onclick="logout()">Sair</button>
-    </section>
+    </main>
 </div>
 
 <!-- Modal -->
 <div id="modal" class="modal hidden">
     <div class="modal-content">
-        <span id="closeModalBtn" class="close">&times;</span>
-        <h3>Nova Transação</h3>
-        <input type="text" id="descInput" placeholder="Descrição">
-        <input type="number" id="amountInput" placeholder="Valor">
-        <select id="typeInput">
-            <option value="RECEITA">Receita</option>
-            <option value="DESPESA">Despesa</option>
-        </select>
-        <select id="catInput"><option value="">Selecione uma categoria</option></select>
-        <button onclick="addTransaction()">Salvar</button>
+        <button class="modal-close" id="closeModalBtn">✕</button>
+        <h3 class="modal-title">Nova Transação</h3>
+        <div class="input-group">
+            <label>Descrição</label>
+            <input type="text" id="descInput" placeholder="Ex: Salário, Aluguel...">
+        </div>
+        <div class="input-group">
+            <label>Valor (R$)</label>
+            <input type="number" id="amountInput" placeholder="0,00" min="0" step="100">
+        </div>
+        <div class="input-group">
+            <label>Tipo</label>
+            <select id="typeInput">
+                <option value="RECEITA">Receita</option>
+                <option value="DESPESA">Despesa</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Categoria</label>
+            <select id="catInput"><option value="">Selecione uma categoria</option></select>
+        </div>
+        <button class="save-btn" onclick="addTransaction()">Salvar Transação</button>
         <p id="modalFeedback"></p>
     </div>
 </div>
 
-<!-- Tela de carregamento -->
-<div id="loading" class="loading hidden">⏳ Carregando...</div>
+<!-- Loading -->
+<div id="loading" class="loading hidden">
+    <div class="loading-inner">
+        <div class="loading-spinner"></div>
+        <span>Carregando...</span>
+    </div>
+</div>
 
 <script src="script.js"></script>
 </body>
