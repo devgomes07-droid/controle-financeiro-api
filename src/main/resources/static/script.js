@@ -9,13 +9,27 @@ window.onload = () => {
   document.getElementById("modal").classList.add("hidden");
   document.getElementById("loading").classList.add("hidden");
 
-  // Data no header
-  const now = new Date();
   const dashDate = document.getElementById("dashDate");
   if (dashDate) {
-    dashDate.innerText = now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    dashDate.innerText = new Date().toLocaleDateString("pt-BR", {
+      weekday: "long", day: "numeric", month: "long", year: "numeric"
+    });
   }
 };
+
+// Sidebar mobile
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("open");
+}
+
+function abrirModal() {
+  // Fecha sidebar no mobile ao abrir modal
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("open");
+  carregarCategorias();
+  document.getElementById("modal").classList.remove("hidden");
+}
 
 function showLoginFeedback(msg, type) {
   const el = document.getElementById("loginFeedback");
@@ -44,7 +58,7 @@ async function login() {
   }
 
   const btn = document.getElementById("loginBtn");
-  btn.querySelector("span").innerText = "Entrando...";
+  document.getElementById("loginBtnText").innerText = "Entrando...";
   btn.disabled = true;
   showLoading(true);
 
@@ -70,10 +84,6 @@ async function login() {
     document.getElementById("welcomeMsg").innerText = `Olá, ${nomeExibido} 👋`;
     document.getElementById("sidebarUser").innerText = nomeExibido;
 
-    document.getElementById("openModalBtn").onclick = () => {
-      carregarCategorias();
-      document.getElementById("modal").classList.remove("hidden");
-    };
     document.getElementById("closeModalBtn").onclick = () => {
       document.getElementById("modal").classList.add("hidden");
     };
@@ -82,7 +92,7 @@ async function login() {
   } catch (err) {
     showLoginFeedback("Erro de conexão. Tente novamente.", "error");
   } finally {
-    btn.querySelector("span").innerText = "Entrar";
+    document.getElementById("loginBtnText").innerText = "Entrar";
     btn.disabled = false;
     showLoading(false);
   }
@@ -116,22 +126,38 @@ function logout() {
   document.getElementById("password").value = "";
 }
 
+// ✅ Detecta QUALQUER formato de type: RECEITA, DESPESA, INCOME, EXPENSE, receita, despesa...
+function isReceita(type) {
+  const t = (type ?? "").toUpperCase().trim();
+  return t === "RECEITA" || t === "INCOME" || t === "R" || t === "ENTRADA";
+}
+
 async function carregar() {
   showLoading(true);
   try {
     const res = await fetch(`${API_URL}/transactions`, {
       headers: { "Authorization": `Bearer ${token}` }
     });
+
+    if (!res.ok) throw new Error("Erro ao buscar transações");
+
     const data = await res.json();
 
     let receitas = 0, despesas = 0, categorias = {};
     const tbody = document.getElementById("transactionsBody");
     tbody.innerHTML = "";
 
+    if (!Array.isArray(data) || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#7b8091;padding:32px">Nenhuma transação encontrada.</td></tr>`;
+      document.getElementById("receitas").innerText = "R$ 0,00";
+      document.getElementById("despesas").innerText = "R$ 0,00";
+      document.getElementById("saldo").innerText = "R$ 0,00";
+      return;
+    }
+
     data.forEach(t => {
-      const type = (t.type ?? "").toUpperCase();
-      const isReceita = type === "INCOME" || type === "RECEITA";
-      if (isReceita) receitas += t.amount; else despesas += t.amount;
+      const rec = isReceita(t.type);
+      if (rec) receitas += t.amount; else despesas += t.amount;
 
       const cat = t.category ?? "Outros";
       categorias[cat] = (categorias[cat] || 0) + t.amount;
@@ -139,12 +165,12 @@ async function carregar() {
       tbody.innerHTML += `
         <tr>
           <td>${t.description}</td>
-          <td class="${isReceita ? 'td-income' : 'td-expense'}">
-            ${isReceita ? '+' : '-'} R$ ${t.amount.toFixed(2)}
+          <td class="${rec ? 'td-income' : 'td-expense'}">
+            ${rec ? '+' : '-'} R$ ${t.amount.toFixed(2)}
           </td>
           <td>
-            <span class="badge ${isReceita ? 'badge-income' : 'badge-expense'}">
-              ${isReceita ? 'Receita' : 'Despesa'}
+            <span class="badge ${rec ? 'badge-income' : 'badge-expense'}">
+              ${rec ? 'Receita' : 'Despesa'}
             </span>
           </td>
           <td>${cat}</td>
@@ -157,10 +183,11 @@ async function carregar() {
     const saldo = receitas - despesas;
     document.getElementById("receitas").innerText = "R$ " + receitas.toFixed(2);
     document.getElementById("despesas").innerText = "R$ " + despesas.toFixed(2);
-    document.getElementById("saldo").innerText = (saldo >= 0 ? "R$ " : "- R$ ") + Math.abs(saldo).toFixed(2);
+    document.getElementById("saldo").innerText = (saldo < 0 ? "- R$ " : "R$ ") + Math.abs(saldo).toFixed(2);
 
     drawCharts(receitas, despesas, categorias);
-  } catch {
+  } catch(e) {
+    console.error(e);
     showLoginFeedback("Erro ao carregar dados.", "error");
   } finally {
     showLoading(false);
@@ -192,7 +219,7 @@ function drawCharts(receitas, despesas, categorias) {
   if (pieChart) { pieChart.destroy(); pieChart = null; }
 
   Chart.defaults.color = "#7b8091";
-  Chart.defaults.font.family = "DM Sans";
+  Chart.defaults.font.family = "DM Sans, sans-serif";
 
   barChart = new Chart(barCtx, {
     type: "bar",
@@ -200,17 +227,18 @@ function drawCharts(receitas, despesas, categorias) {
       labels: ["Receitas", "Despesas"],
       datasets: [{
         data: [receitas, despesas],
-        backgroundColor: ["rgba(0,245,160,0.7)", "rgba(255,77,109,0.7)"],
+        backgroundColor: ["rgba(0,245,160,0.75)", "rgba(255,77,109,0.75)"],
         borderColor: ["#00f5a0", "#ff4d6d"],
         borderWidth: 2,
         borderRadius: 8,
       }]
     },
     options: {
+      responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-        x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#7b8091" } },
-        y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#7b8091" } }
+        x: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "#7b8091" } },
+        y: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "#7b8091" } }
       }
     }
   });
@@ -225,16 +253,17 @@ function drawCharts(receitas, despesas, categorias) {
         labels,
         datasets: [{
           data: values,
-          backgroundColor: ["#00f5a0","#00d4ff","#ff4d6d","#ffd166","#a855f7","#06d6a0"],
+          backgroundColor: ["#00f5a0","#00d4ff","#ff4d6d","#ffd166","#a855f7","#06d6a0","#f72585"],
           borderWidth: 0,
           hoverOffset: 8
         }]
       },
       options: {
+        responsive: true,
         plugins: {
           legend: {
             position: "bottom",
-            labels: { color: "#7b8091", padding: 16, usePointStyle: true }
+            labels: { color: "#7b8091", padding: 16, usePointStyle: true, font: { size: 12 } }
           }
         },
         cutout: "65%"
@@ -249,8 +278,8 @@ async function addTransaction() {
   const type = document.getElementById("typeInput").value;
   const cat = document.getElementById("catInput").value.trim();
 
-  if (!desc || isNaN(amount) || !cat) {
-    showModalFeedback("Preencha todos os campos.", "error");
+  if (!desc || isNaN(amount) || amount <= 0 || !cat) {
+    showModalFeedback("Preencha todos os campos corretamente.", "error");
     return;
   }
 
@@ -267,6 +296,8 @@ async function addTransaction() {
     });
 
     if (!res.ok) {
+      const errText = await res.text();
+      console.error("Erro API:", errText);
       showModalFeedback("Erro ao salvar transação.", "error");
       return;
     }
@@ -281,7 +312,8 @@ async function addTransaction() {
       carregar();
     }, 1200);
 
-  } catch {
+  } catch(e) {
+    console.error(e);
     showModalFeedback("Erro de conexão.", "error");
   } finally {
     showLoading(false);
